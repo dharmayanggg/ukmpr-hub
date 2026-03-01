@@ -149,7 +149,6 @@ export default function App() {
   const [aiTips, setAiTips] = useState('');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   useEffect(() => {
   const handlePopState = (event: PopStateEvent) => {
@@ -165,11 +164,6 @@ export default function App() {
   return () => window.removeEventListener('popstate', handlePopState);
 }, []);
 
-  useEffect(() => {
-    const checkHealth = () => {
-      fetch('/api/health')
-        .then(res => res.ok ? setServerStatus('online') : setServerStatus('offline'))
-        .catch(() => setServerStatus('offline'));
     };
     checkHealth();
     const interval = setInterval(checkHealth, 30000); // Check every 30s
