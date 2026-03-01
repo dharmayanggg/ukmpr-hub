@@ -7,6 +7,11 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      // --- INI PERBAIKANNYA ---
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+      },
+      // -------------------------
       colors: {
         primary: 'rgb(var(--theme-color) / <alpha-value>)',
       },
