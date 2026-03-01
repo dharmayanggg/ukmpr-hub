@@ -1067,7 +1067,6 @@ export default function App() {
             </button>
           </form>
           </div>
-        )
       )}
 
       {memberView === 'list' && (
