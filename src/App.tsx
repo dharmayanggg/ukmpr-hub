@@ -341,9 +341,11 @@ export default function App() {
   }
 
   const handleNavClick = (id: string) => {
-    setActiveTab(id);
-    setIsMoreMenuOpen(false);
-  };
+  setActiveTab(id);
+  setIsMoreMenuOpen(false);
+  // Tambahkan baris ini untuk mencatat riwayat navigasi
+  window.history.pushState({ tab: id }, '', `#${id}`);
+};
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'} flex justify-center font-sans selection:bg-blue-500 selection:bg-opacity-20 selection:text-blue-500 transition-colors duration-300`}>
