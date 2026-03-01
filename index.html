@@ -12,34 +12,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-      /* Memaksa seluruh aplikasi menggunakan font Plus Jakarta Sans */
-      * {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        /* Menghapus kotak biru default saat tombol diklik di HP agar lebih clean */
-        -webkit-tap-highlight-color: transparent;
-      }
-      
-      /* --- FITUR SELECTION COLOR --- */
-      ::selection {
-        background-color: rgba(59, 130, 246, 0.2); /* Biru transparan (20% opacity) */
-        color: #2563eb; /* Warna teks jadi biru tegas saat diblok */
-      }
-      
-      /* Untuk browser Firefox */
-      ::-moz-selection {
-        background-color: rgba(59, 130, 246, 0.2);
-        color: #2563eb;
-      }
+  /* 1. Paksa Font */
+  * {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-      body {
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-        /* Menghaluskan tampilan font di layar */
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-    </style>
+  /* 2. Paksa Warna Blok (Selection) - Gunakan !important di sini juga */
+  ::selection {
+    background-color: rgba(37, 99, 235, 0.25) !important; /* Biru transparan */
+    color: #1e40af !important; /* Teks jadi biru tua agar terbaca */
+  }
+
+  /* Versi Firefox */
+  ::-moz-selection {
+    background-color: rgba(37, 99, 235, 0.25) !important;
+    color: #1e40af !important;
+  }
+
+  /* 3. Tambahan khusus untuk input/textarea di HP agar tidak biru pekat */
+  input::selection, textarea::selection {
+    background-color: rgba(37, 99, 235, 0.3) !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+</style>
+
   </head>
   <body>
     <div id="root"></div>
