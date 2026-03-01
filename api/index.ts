@@ -284,20 +284,54 @@ app.delete("/api/stats/:id", isAdminMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: "Gagal menghapus stat" }); }
 });
 
-// OTHERS
-app.get("/api/announcements", async (req, res) => {
-  try { const result = await db.execute("SELECT * FROM announcements ORDER BY id DESC"); res.json(result.rows); } catch(e) { res.json([]) }
-});
-
+// --- MENTOR MANAGEMENT ---
 app.get("/api/mentors", async (req, res) => {
-  try { const result = await db.execute("SELECT * FROM mentors"); res.json(result.rows); } catch(e) { res.json([]) }
+  try { 
+    const result = await db.execute("SELECT * FROM mentors"); 
+    res.json(result.rows); 
+  } catch(e) { res.json([]); }
 });
 
+app.post("/api/mentors", isAdminMiddleware, async (req, res) => {
+  const { name, expertise, rating, available, experience, education, achievements, photo } = req.body;
+  try {
+    const result = await db.execute({
+      sql: "INSERT INTO mentors (name, expertise, rating, available, experience, education, achievements, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      args: [
+        name || "Nama Mentor", 
+        expertise || "Bidang Keahlian", 
+        rating || 5, 
+        available !== undefined ? available : 1, 
+        experience || "-", 
+        education || "-", 
+        achievements || "-", 
+        photo || "https://ui-avatars.com/api/?name=Mentor&background=random"
+      ]
+    });
+    res.json({ id: Number(result.lastInsertRowid) });
+  } catch(err) { 
+    res.status(500).json({ error: "Gagal menambah mentor" }); 
+  }
+});
+
+app.delete("/api/mentors/:id", isAdminMiddleware, async (req, res) => {
+  try {
+    await db.execute({ sql: "DELETE FROM mentors WHERE id = ?", args: [req.params.id] });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: "Gagal menghapus mentor" }); }
+});
+
+// --- BANNERS & NOTIF ---
 app.get("/api/banners", async (req, res) => {
-  try { const result = await db.execute("SELECT * FROM banners"); res.json(result.rows); } catch(e) { res.json([]) }
+  try { 
+    const result = await db.execute("SELECT * FROM banners"); 
+    res.json(result.rows); 
+  } catch(e) { res.json([]); }
 });
 
-app.get("/api/notifications", async (req, res) => { res.json([]); });
+app.get("/api/notifications", async (req, res) => { 
+  res.json([]); 
+});
 
 // Khusus Vercel
 export default app;
