@@ -175,6 +175,7 @@ export default function App() {
     const interval = setInterval(checkHealth, 30000); // Check every 30s
     return () => clearInterval(interval);
   }, []);
+  const [showPassword, setShowPassword] = useState(false);
   const [isPostingModalOpen, setIsPostingModalOpen] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [isAdOpen, setIsAdOpen] = useState(true);
