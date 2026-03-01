@@ -6,7 +6,7 @@ import {
   FileText, CheckCircle, Download, Star, 
   MoreHorizontal, Upload, Settings, LogOut, ChevronRight, ChevronLeft, X, UserCircle, Camera, Phone,
   Palette, Globe, Info, MapPin, Instagram, Moon, Sun, Heart, MessageCircle, Share2, Send,
-  Lightbulb, PenTool, Cpu, Rocket, Database, Zap, Shield, Plus, Edit2, Trash2, Lock, Bot
+  Lightbulb, PenTool, Cpu, Rocket, Database, Zap, Shield, Plus, Edit2, Trash2, Lock, Bot, Eye, EyeOff
 } from 'lucide-react';
 import { getAiGreeting, getAiTips, getAiNews, brainstormInitiate, brainstormMessage } from './services/geminiService';
 import { QRCodeCanvas } from 'qrcode.react';
