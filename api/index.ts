@@ -13,8 +13,13 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const tursoUrl = process.env.TURSO_URL || "libsql://ukmpr-db-dharmayanggg.aws-ap-northeast-1.turso.io";
-const tursoAuthToken = process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDM4MDE4MjksImlhdCI6MTc3MjI2NTgyOSwiaWQiOiIwMTljYTM0NC03MTAxLTdmMGItODA2NC1lZTM1MGRmODA1ODQiLCJyaWQiOiI5ZmMwMDUxOC04YjNhLTQzZTYtYTJmZi02NjkwNTExZjM1MjAifQ.5jD8ZnjwwtrcZi3uYzz1cRLcvyzmW51bG-cNDHYi485-c46ynYzw936TW8IoVI_hKsFOGX9mHSwCTSKTMWrDDQ";
+const tursoUrl = process.env.UKMPR_TURSO_DATABASE_URL;
+const tursoAuthToken = process.env.UKMPR_TURSO_AUTH_TOKEN;
+
+if (!tursoUrl || !tursoAuthToken) {
+  console.error("[v0] Turso database credentials not configured. Please set UKMPR_TURSO_DATABASE_URL and UKMPR_TURSO_AUTH_TOKEN in environment variables.");
+  process.exit(1);
+}
 
 const db = createClient({
   url: tursoUrl,
@@ -910,7 +915,56 @@ startVite().catch(console.error);
 export default app;
 
 // For local development and non-serverless environments
-const PORT = Number(process.env.PORT) || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+const tryListenOnPort = (port: number): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    try {
+      const server = app.listen(port, "0.0.0.0", () => {
+        console.log(`[v0] Server running on http://localhost:${port}`);
+        resolve(server);
+      });
+
+      server.once('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log(`[v0] Port ${port} is already in use`);
+          reject(err);
+        } else {
+          console.error('[v0] Server error:', err.message);
+          reject(err);
+        }
+      });
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
+
+const startServer = async () => {
+  let port = Number(process.env.PORT) || 3000;
+  const maxRetries = 10;
+  let lastError: any = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const server = await tryListenOnPort(port);
+      console.log(`[v0] Successfully listening on port ${port}`);
+      return server;
+    } catch (err: any) {
+      lastError = err;
+      port++;
+      if (i < maxRetries - 1) {
+        console.log(`[v0] Trying port ${port}...`);
+      }
+    }
+  }
+  
+  console.error(`[v0] Could not find an available port after trying ${maxRetries} ports`);
+  process.exit(1);
+};
+
+// Only start server in development mode and not in Vercel environment
+if (process.env.VERCEL !== 'true' && process.env.NODE_ENV !== 'production') {
+  startServer().catch((err) => {
+    console.error('[v0] Failed to start server:', err.message);
+    process.exit(1);
+  });
+}
