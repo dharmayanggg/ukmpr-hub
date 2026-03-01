@@ -116,23 +116,48 @@ app.post("/api/auth/logout", async (req, res) => {
   res.json({ success: true });
 });
 
-// --- PROFILE EDIT ---
-app.put("/api/profile/me", isLoggedInMiddleware, async (req: res) => {
-  const { name, major, program, entryYear, gradYear, role, wa, nim, photo, bio, username } = (req as any).body;
-  const sessionUserId = (req as any).user.id;
+// --- PROFILE ---
+app.put("/api/profile/me", async (req, res) => {
+  const sessionId = req.cookies.session_id;
+  if (!sessionId) return res.status(401).json({ error: "Unauthorized" });
+
+  const sessionRes = await db.execute({ sql: "SELECT * FROM sessions WHERE id = ? AND expiresAt > ?", args: [sessionId, Date.now()] });
+  const session = sessionRes.rows[0] as any;
+  if (!session) return res.status(401).json({ error: "Session expired" });
+
+  // Ambil data lama agar tidak tertimpa kosong (undefined)
+  const oldDataRes = await db.execute({ sql: "SELECT * FROM members WHERE id = ?", args: [session.userId] });
+  const oldData = oldDataRes.rows[0] as any;
+
+  const { name, major, program, entryYear, gradYear, role, wa, nim, photo, bio, username } = req.body;
+
   try {
-    // PERBAIKAN: Semua opsional data diubah menjadi || null
     await db.execute({
       sql: `UPDATE members SET name = ?, major = ?, program = ?, entryYear = ?, gradYear = ?, role = ?, wa = ?, nim = ?, photo = ?, bio = ?, username = ? WHERE id = ?`,
-      args: [name, major || "", program || "", entryYear || 0, gradYear || null, role, wa || null, nim || null, photo || null, bio || null, username, sessionUserId]
+      args: [
+        name || oldData.name,
+        major || oldData.major || "",
+        program || oldData.program || "",
+        entryYear || oldData.entryYear || 0,
+        gradYear !== undefined ? gradYear : (oldData.gradYear || null),
+        role || oldData.role,
+        wa !== undefined ? wa : (oldData.wa || null),
+        nim !== undefined ? nim : (oldData.nim || null),
+        photo !== undefined ? photo : (oldData.photo || null),
+        bio !== undefined ? bio : (oldData.bio || null),
+        username || oldData.username,
+        session.userId
+      ]
     });
-    const userRes = await db.execute({ sql: "SELECT * FROM members WHERE id = ?", args: [sessionUserId] });
-    (res as any).json({ success: true, user: userRes.rows[0] });
+
+    const userRes = await db.execute({ sql: "SELECT * FROM members WHERE id = ?", args: [session.userId] });
+    res.json({ success: true, user: userRes.rows[0] });
   } catch (err: any) {
-    console.error("Profile Edit Error:", err);
-    (res as any).status(500).json({ error: "Gagal memperbarui profil" });
+    console.error("Error Profile Update:", err);
+    res.status(500).json({ error: "Gagal memperbarui profil" });
   }
 });
+
 
 // --- FEED (POSTS) ---
 app.get("/api/posts", async (req, res) => {
