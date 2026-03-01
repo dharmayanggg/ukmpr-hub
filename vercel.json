@@ -1,12 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm ci",
   "framework": "vite",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "env": [
-    "UKMPR_TURSO_DATABASE_URL",
-    "UKMPR_TURSO_AUTH_TOKEN",
-    "GEMINI_API_KEY"
-  ]
+  "installCommand": "npm ci"
 }
