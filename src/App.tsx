@@ -402,12 +402,6 @@ export default function App() {
               >
                 <Settings size={20} />
               </button>
-              {/* Server Status Dot */}
-              <div className={`w-3 h-3 rounded-full ${
-                serverStatus === 'online' ? 'bg-green-500 animate-pulse' : 
-                serverStatus === 'offline' ? 'bg-red-500' : 
-                'bg-slate-400'
-              }`} title={`Server: ${serverStatus}`} />
             </div>
           </div>
           
