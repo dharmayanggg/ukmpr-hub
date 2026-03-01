@@ -357,32 +357,34 @@ export default function App() {
       <div className={`w-full max-w-md ${isDarkMode ? 'bg-slate-800' : 'bg-white'} h-screen h-[100dvh] shadow-2xl relative flex flex-col overflow-hidden transition-colors duration-300`}>
         
         {/* TOP HEADER */}
-        <header className={`${isDarkMode ? 'bg-slate-800 bg-opacity-90 border-slate-700' : 'bg-white bg-opacity-90 border-slate-100'} backdrop-blur-md border-b flex flex-col px-5 shrink-0 sticky top-0 z-30 pt-3 pb-2`}>
-                    <div className="flex items-center justify-between w-full">
-            {/* Bagian Logo Kiri */}
-            <div className="flex items-center space-x-2 min-w-0 flex-1">
-              <div className="flex items-center shrink-0 space-x-1">
-                <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/logo-iahn.png" alt="IAHN" className="h-6 w-auto object-contain" referrerPolicy="no-referrer" />
-                <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/Logo-ukmpr" alt="UKMPR" className="h-6 w-auto object-contain" referrerPolicy="no-referrer" />
+                {/* TOP HEADER - STICKY & PRO LOOK */}
+        <header className={`${isDarkMode ? 'bg-slate-800/95 border-slate-700' : 'bg-white/95 border-slate-100'} backdrop-blur-md border-b flex flex-col px-5 shrink-0 sticky top-0 z-50 pt-4 pb-3 transition-all duration-300`}>
+          
+          <div className="flex items-center justify-between w-full">
+            {/* Logo & Judul yang Lebih Stabil */}
+            <div className="flex items-center space-x-3 min-w-0 flex-1">
+              <div className="flex items-center shrink-0 space-x-1.5">
+                <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/logo-iahn.png" alt="IAHN" className="h-8 w-auto object-contain" referrerPolicy="no-referrer" />
+                <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/Logo-ukmpr" alt="UKMPR" className="h-8 w-auto object-contain" referrerPolicy="no-referrer" />
               </div>
               <div className="flex flex-col min-w-0">
-                <h1 className={`text-base font-bold truncate leading-none ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                <h1 className={`text-lg font-extrabold tracking-tight leading-none truncate ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
                   UKMPR<span className="text-blue-600 dark:text-blue-400"> Hub</span>
                 </h1>
-                <p className="text-[8px] text-slate-500 truncate mt-0.5">IAHN Gde Pudja Mataram</p>
+                <p className="text-[9px] text-slate-500 font-bold truncate mt-0.5 uppercase tracking-tighter">Apps UKMPR IAHN Gde Pudja</p>
               </div>
             </div>
 
-            {/* Bagian Tombol Kanan (Titik Hijau Sudah Lennyap) */}
-            <div className="flex items-center space-x-2 shrink-0">
+            {/* Tombol Navigasi Kanan */}
+            <div className="flex items-center space-x-2 shrink-0 ml-2">
               {myProfile && (
                 <button 
                   onClick={() => { setIsNotificationOpen(true); markNotificationsRead(); }}
-                  className={`relative p-2 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  className={`relative p-2.5 rounded-2xl transition-all duration-300 ${isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-sm'}`}
                 >
-                  <Bell size={18} />
+                  <Bell size={20} />
                   {notifications.filter(n => !n.isRead).length > 0 && (
-                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full animate-pulse">
+                    <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white dark:border-slate-800 animate-pulse">
                       {notifications.filter(n => !n.isRead).length}
                     </span>
                   )}
@@ -390,21 +392,21 @@ export default function App() {
               )}
               <button 
                 onClick={() => { setIsMoreMenuOpen(true); setMemberView('settings'); }}
-                className="p-2 text-slate-400 hover:text-blue-600 transition rounded-full hover:bg-slate-50"
+                className={`p-2.5 rounded-2xl transition-all duration-300 ${isDarkMode ? 'text-slate-400 hover:text-blue-400 hover:bg-slate-700' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'}`}
               >
-                <Settings size={18} />
+                <Settings size={20} />
               </button>
             </div>
           </div>
           
           {/* Header Running Text */}
-          <div className="mt-2 overflow-hidden bg-slate-50 dark:bg-slate-900 dark:bg-opacity-50 py-1 border-y border-slate-100 dark:border-slate-700 -mx-5">
+          <div className="mt-3 overflow-hidden bg-slate-50/50 dark:bg-slate-900/30 py-1.5 border-y border-slate-100 dark:border-slate-700 -mx-5 shadow-inner">
             <div className="flex w-max animate-marquee whitespace-nowrap">
-              <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 px-4">
-                Telah terlaksana lomba resensi buku dan penyerahan hadiah • Selamat menunaikan ibadah puasa • Hari raya Nyepi sebentar lagi ada ogoh-ogoh • Gde Pudja Creativity Fair 16-17 Mei 2026 (Lomba KTI Nasional, Esai dan Video Pendek SMA/SMK Kota Mataram) • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 px-4">
+                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas
               </span>
-              <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 px-4">
-                Telah terlaksana lomba resensi buku dan penyerahan hadiah • Selamat menunaikan ibadah puasa • Hari raya Nyepi sebentar lagi ada ogoh-ogoh • Gde Pudja Creativity Fair 16-17 Mei 2026 (Lomba KTI Nasional, Esai dan Video Pendek SMA/SMK Kota Mataram) • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 px-4">
+                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas
               </span>
             </div>
           </div>
