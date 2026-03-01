@@ -996,8 +996,6 @@ export default function App() {
                       </div>
                     </div>
                   )}
-                </div>
-              )}
 
               {memberView === 'adminLogin' && (
                 <div className="flex flex-col items-center justify-center space-y-6 py-10">
@@ -1064,27 +1062,26 @@ export default function App() {
                 </div>
               )}
 
-              {/* The card view has been integrated into the main member menu */}
+                        </form>
+        </div>
+      )}
 
-                    {memberView === 'list' && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {memberView === 'list' && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
           <div className="space-y-3">
-            {members.filter(m => m.role !== 'admin').length > 0 ? (
-              members.filter(m => m.role !== 'admin').map((m) => (
-                <div key={m.id} className="flex items-center space-x-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-bold shrink-0">
-                    {m.name.charAt(0)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-slate-800 dark:text-white truncate">{m.name}</p>
-                    <p className="text-xs text-slate-500 truncate capitalize">{m.role}</p>
-                  </div>
+            {members.filter(m => m.role !== 'admin').map((m) => (
+              <div key={m.id} className="flex items-center space-x-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                  {m.name.charAt(0)}
                 </div>
-              ))
-            ) : (
-              <div className="py-10 text-center">
-                <p className="text-slate-400 text-sm italic">Belum ada anggota yang terdaftar</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-slate-800 dark:text-white truncate">{m.name}</p>
+                  <p className="text-xs text-slate-500 truncate capitalize">{m.role}</p>
+                </div>
               </div>
+            ))}
+            {members.filter(m => m.role !== 'admin').length === 0 && (
+              <p className="text-center text-slate-500 py-10 italic">Belum ada anggota.</p>
             )}
           </div>
         </div>
