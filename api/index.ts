@@ -915,21 +915,20 @@ startVite().catch(console.error);
 export default app;
 
 // For local development and non-serverless environments
-const tryListenOnPort = (port: number): Promise<void> => {
+const tryListenOnPort = (port: number): Promise<any> => {
   return new Promise((resolve, reject) => {
     const server = app.listen(port, "0.0.0.0", () => {
       console.log(`[v0] Server running on http://localhost:${port}`);
-      resolve();
+      resolve(server);
     });
 
     server.on('error', (err: any) => {
       if (err.code === 'EADDRINUSE') {
-        console.log(`[v0] Port ${port} is already in use`);
-        server.close();
+        console.log(`[v0] Port ${port} is already in use, trying next...`);
         reject(err);
       } else {
         console.error('[v0] Server error:', err);
-        process.exit(1);
+        reject(err);
       }
     });
   });
@@ -937,24 +936,27 @@ const tryListenOnPort = (port: number): Promise<void> => {
 
 const startServer = async () => {
   let port = Number(process.env.PORT) || 3000;
-  const maxRetries = 5;
+  const maxRetries = 10;
   
   for (let i = 0; i < maxRetries; i++) {
     try {
-      await tryListenOnPort(port);
-      break; // Successfully started
-    } catch (err) {
+      const server = await tryListenOnPort(port);
+      console.log(`[v0] Successfully listening on port ${port}`);
+      return server;
+    } catch (err: any) {
       if (i === maxRetries - 1) {
-        console.error(`[v0] Could not find an available port after trying ${maxRetries} ports starting from ${Number(process.env.PORT) || 3000}`);
+        console.error(`[v0] Could not find an available port after trying ${maxRetries} ports`);
         process.exit(1);
       }
       port++;
-      console.log(`[v0] Trying next port: ${port}`);
     }
   }
 };
 
-// Only start if not in serverless environment
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  startServer().catch(console.error);
+// Only start server in development mode and not in Vercel environment
+if (process.env.VERCEL !== 'true' && process.env.NODE_ENV !== 'production') {
+  startServer().catch((err) => {
+    console.error('[v0] Failed to start server:', err);
+    process.exit(1);
+  });
 }
