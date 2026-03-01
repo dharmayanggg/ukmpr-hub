@@ -369,29 +369,31 @@ export default function App() {
         
         {/* TOP HEADER */}
         <header className={`${isDarkMode ? 'bg-slate-800 bg-opacity-90 border-slate-700' : 'bg-white bg-opacity-90 border-slate-100'} backdrop-blur-md border-b flex flex-col px-5 shrink-0 sticky top-0 z-30 pt-3 pb-2`}>
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1.5 mr-1">
-                <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/logo-iahn.png" alt="Logo IAHN" className="h-7 w-auto object-contain" referrerPolicy="no-referrer" />
-                <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/Logo-ukmpr" alt="Logo UKMPR" className="h-7 w-auto object-contain" referrerPolicy="no-referrer" />
+                    <div className="flex items-center justify-between w-full">
+            {/* Bagian Logo Kiri */}
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <div className="flex items-center shrink-0 space-x-1">
+                <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/logo-iahn.png" alt="IAHN" className="h-6 w-auto object-contain" referrerPolicy="no-referrer" />
+                <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/Logo-ukmpr" alt="UKMPR" className="h-6 w-auto object-contain" referrerPolicy="no-referrer" />
               </div>
-              <div className="flex flex-col">
-                <span className={`text-lg font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>UKMPR<span className="text-blue-600 dark:text-blue-400"> Hub</span></span>
-                <span className="text-[9px] text-slate-500 font-medium -mt-1">Apps UKMPR IAHN Gde Pudja Mataram</span>
+              <div className="flex flex-col min-w-0">
+                <h1 className={`text-base font-bold truncate leading-none ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                  UKMPR<span className="text-blue-600 dark:text-blue-400"> Hub</span>
+                </h1>
+                <p className="text-[8px] text-slate-500 truncate mt-0.5">IAHN Gde Pudja Mataram</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+
+            {/* Bagian Tombol Kanan (Titik Hijau Sudah Lennyap) */}
+            <div className="flex items-center space-x-2 shrink-0">
               {myProfile && (
                 <button 
-                  onClick={() => {
-                    setIsNotificationOpen(true);
-                    markNotificationsRead();
-                  }}
+                  onClick={() => { setIsNotificationOpen(true); markNotificationsRead(); }}
                   className={`relative p-2 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                 >
-                  <Bell size={20} />
+                  <Bell size={18} />
                   {notifications.filter(n => !n.isRead).length > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-slate-800 animate-pulse">
+                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full animate-pulse">
                       {notifications.filter(n => !n.isRead).length}
                     </span>
                   )}
@@ -399,9 +401,9 @@ export default function App() {
               )}
               <button 
                 onClick={() => { setIsMoreMenuOpen(true); setMemberView('settings'); }}
-                className="relative p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition rounded-full hover:bg-slate-50"
+                className="p-2 text-slate-400 hover:text-blue-600 transition rounded-full hover:bg-slate-50"
               >
-                <Settings size={20} />
+                <Settings size={18} />
               </button>
             </div>
           </div>
