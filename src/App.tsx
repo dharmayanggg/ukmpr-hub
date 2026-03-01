@@ -151,6 +151,20 @@ export default function App() {
   const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   useEffect(() => {
+  const handlePopState = (event: PopStateEvent) => {
+    if (event.state && event.state.tab) {
+      setActiveTab(event.state.tab);
+      setIsMoreMenuOpen(false);
+    } else {
+      setActiveTab('dashboard');
+    }
+  };
+
+  window.addEventListener('popstate', handlePopState);
+  return () => window.removeEventListener('popstate', handlePopState);
+}, []);
+
+  useEffect(() => {
     const checkHealth = () => {
       fetch('/api/health')
         .then(res => res.ok ? setServerStatus('online') : setServerStatus('offline'))
