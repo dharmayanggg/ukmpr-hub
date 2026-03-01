@@ -910,30 +910,46 @@ startVite().catch(console.error);
 export default app;
 
 // For local development and non-serverless environments
-const startServer = () => {
-  const PORT = Number(process.env.PORT) || 3000;
-  const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+const tryListenOnPort = (port: number): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, "0.0.0.0", () => {
+      console.log(`[v0] Server running on http://localhost:${port}`);
+      resolve();
+    });
 
-  server.on('error', (err: any) => {
-    if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${PORT} is already in use, trying port ${PORT + 1}...`);
-      const nextPort = PORT + 1;
-      const retryServer = app.listen(nextPort, "0.0.0.0", () => {
-        console.log(`Server running on http://localhost:${nextPort}`);
-      });
-      retryServer.on('error', (retryErr: any) => {
-        if (retryErr.code === 'EADDRINUSE') {
-          console.error(`Ports ${PORT} and ${nextPort} are both in use. Please free up a port.`);
-          process.exit(1);
-        }
-      });
-    } else {
-      console.error('Server error:', err);
-      process.exit(1);
-    }
+    server.on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`[v0] Port ${port} is already in use`);
+        server.close();
+        reject(err);
+      } else {
+        console.error('[v0] Server error:', err);
+        process.exit(1);
+      }
+    });
   });
 };
 
-startServer();
+const startServer = async () => {
+  let port = Number(process.env.PORT) || 3000;
+  const maxRetries = 5;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await tryListenOnPort(port);
+      break; // Successfully started
+    } catch (err) {
+      if (i === maxRetries - 1) {
+        console.error(`[v0] Could not find an available port after trying ${maxRetries} ports starting from ${Number(process.env.PORT) || 3000}`);
+        process.exit(1);
+      }
+      port++;
+      console.log(`[v0] Trying next port: ${port}`);
+    }
+  }
+};
+
+// Only start if not in serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  startServer().catch(console.error);
+}
