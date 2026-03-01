@@ -917,26 +917,31 @@ export default app;
 // For local development and non-serverless environments
 const tryListenOnPort = (port: number): Promise<any> => {
   return new Promise((resolve, reject) => {
-    const server = app.listen(port, "0.0.0.0", () => {
-      console.log(`[v0] Server running on http://localhost:${port}`);
-      resolve(server);
-    });
+    try {
+      const server = app.listen(port, "0.0.0.0", () => {
+        console.log(`[v0] Server running on http://localhost:${port}`);
+        resolve(server);
+      });
 
-    server.on('error', (err: any) => {
-      if (err.code === 'EADDRINUSE') {
-        console.log(`[v0] Port ${port} is already in use, trying next...`);
-        reject(err);
-      } else {
-        console.error('[v0] Server error:', err);
-        reject(err);
-      }
-    });
+      server.once('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log(`[v0] Port ${port} is already in use`);
+          reject(err);
+        } else {
+          console.error('[v0] Server error:', err.message);
+          reject(err);
+        }
+      });
+    } catch (err) {
+      reject(err);
+    }
   });
 };
 
 const startServer = async () => {
   let port = Number(process.env.PORT) || 3000;
   const maxRetries = 10;
+  let lastError: any = null;
   
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -944,19 +949,22 @@ const startServer = async () => {
       console.log(`[v0] Successfully listening on port ${port}`);
       return server;
     } catch (err: any) {
-      if (i === maxRetries - 1) {
-        console.error(`[v0] Could not find an available port after trying ${maxRetries} ports`);
-        process.exit(1);
-      }
+      lastError = err;
       port++;
+      if (i < maxRetries - 1) {
+        console.log(`[v0] Trying port ${port}...`);
+      }
     }
   }
+  
+  console.error(`[v0] Could not find an available port after trying ${maxRetries} ports`);
+  process.exit(1);
 };
 
 // Only start server in development mode and not in Vercel environment
 if (process.env.VERCEL !== 'true' && process.env.NODE_ENV !== 'production') {
   startServer().catch((err) => {
-    console.error('[v0] Failed to start server:', err);
+    console.error('[v0] Failed to start server:', err.message);
     process.exit(1);
   });
 }
