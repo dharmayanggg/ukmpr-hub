@@ -13,8 +13,13 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const tursoUrl = process.env.TURSO_URL || "libsql://ukmpr-db-dharmayanggg.aws-ap-northeast-1.turso.io";
-const tursoAuthToken = process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDM4MDE4MjksImlhdCI6MTc3MjI2NTgyOSwiaWQiOiIwMTljYTM0NC03MTAxLTdmMGItODA2NC1lZTM1MGRmODA1ODQiLCJyaWQiOiI5ZmMwMDUxOC04YjNhLTQzZTYtYTJmZi02NjkwNTExZjM1MjAifQ.5jD8ZnjwwtrcZi3uYzz1cRLcvyzmW51bG-cNDHYi485-c46ynYzw936TW8IoVI_hKsFOGX9mHSwCTSKTMWrDDQ";
+const tursoUrl = process.env.UKMPR_TURSO_DATABASE_URL;
+const tursoAuthToken = process.env.UKMPR_TURSO_AUTH_TOKEN;
+
+if (!tursoUrl || !tursoAuthToken) {
+  console.error("[v0] Turso database credentials not configured. Please set UKMPR_TURSO_DATABASE_URL and UKMPR_TURSO_AUTH_TOKEN in environment variables.");
+  process.exit(1);
+}
 
 const db = createClient({
   url: tursoUrl,
