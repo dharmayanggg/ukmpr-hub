@@ -1008,7 +1008,23 @@ export default function App() {
                     }
                   }} className="w-full max-w-xs space-y-3">
                     <input name="username" required placeholder="Admin Username" className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`} />
-                    <input name="password" type="password" required placeholder="Admin Password" className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`} />
+                                        <div className="relative">
+                      <input 
+                        name="password" 
+                        type={showPassword ? "text" : "password"} 
+                        required 
+                        placeholder="Admin Password" 
+                        className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm pr-10`} 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowPassword(!showPassword)} 
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+
                     <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500">
                       Masuk Dashboard
                     </button>
