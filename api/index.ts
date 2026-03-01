@@ -910,7 +910,30 @@ startVite().catch(console.error);
 export default app;
 
 // For local development and non-serverless environments
-const PORT = Number(process.env.PORT) || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+const startServer = () => {
+  const PORT = Number(process.env.PORT) || 3000;
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${PORT} is already in use, trying port ${PORT + 1}...`);
+      const nextPort = PORT + 1;
+      const retryServer = app.listen(nextPort, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${nextPort}`);
+      });
+      retryServer.on('error', (retryErr: any) => {
+        if (retryErr.code === 'EADDRINUSE') {
+          console.error(`Ports ${PORT} and ${nextPort} are both in use. Please free up a port.`);
+          process.exit(1);
+        }
+      });
+    } else {
+      console.error('Server error:', err);
+      process.exit(1);
+    }
+  });
+};
+
+startServer();
