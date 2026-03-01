@@ -939,7 +939,23 @@ export default function App() {
                             </>
                             )}
                             <input name="username" type="text" placeholder="Username" required className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`} />
-                            <input name="password" type="password" placeholder="Password" required className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`} />
+                                                        <div className="relative">
+                              <input 
+                                name="password" 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="Password" 
+                                required 
+                                className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm pr-10`} 
+                              />
+                              <button 
+                                type="button" 
+                                onClick={() => setShowPassword(!showPassword)} 
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors"
+                              >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                            </div>
+
                             {isRegistering && <p className="text-[10px] text-slate-400 px-2 -mt-2">Minimal 6 karakter, dengan huruf besar, angka & simbol.</p>}
                             
                             {authError && <p className={`text-xs text-red-500 text-center ${isDarkMode ? 'bg-red-900/20' : 'bg-red-50'} p-2 rounded-lg`}>{authError}</p>}
