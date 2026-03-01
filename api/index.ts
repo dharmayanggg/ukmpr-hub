@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Koneksi Database Vercel -> Turso
 const tursoUrl = process.env.TURSO_DATABASE_URL as string;
 const tursoAuthToken = process.env.TURSO_AUTH_TOKEN as string;
 
@@ -55,16 +56,15 @@ const isAdminMiddleware = async (req: any, res: any, next: any) => {
 app.post("/api/auth/public-register", async (req, res) => {
   const { name, username, password, major, program, entryYear, wa, nim } = req.body;
   try {
-    const existing = await db.execute({ sql: "SELECT id FROM members WHERE username = ?", args: [username] });
+    const existing = await db.execute({ sql: "SELECT id FROM members WHERE username = ?", args: [username || ""] });
     if (existing.rows.length > 0) return res.status(400).json({ error: "Username sudah digunakan" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const defaultPhoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+    const defaultPhoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=random`;
     
-    // PERBAIKAN: Menambahkan || null untuk menghindari error undefined Turso
     const result = await db.execute({
       sql: `INSERT INTO members (name, username, password, major, program, entryYear, role, wa, nim, photo) VALUES (?, ?, ?, ?, ?, ?, 'Anggota', ?, ?, ?)`,
-      args: [name, username, hashedPassword, major || "", program || "", entryYear || 0, wa || null, nim || null, defaultPhoto]
+      args: [name || "", username || "", hashedPassword, major || "", program || "", entryYear || 0, wa || null, nim || null, defaultPhoto]
     });
     
     const userId = Number(result.lastInsertRowid);
@@ -76,7 +76,6 @@ app.post("/api/auth/public-register", async (req, res) => {
     const userRes = await db.execute({ sql: "SELECT * FROM members WHERE id = ?", args: [userId] });
     res.status(201).json({ success: true, user: userRes.rows[0] });
   } catch (err) {
-    console.error("Register Error:", err);
     res.status(500).json({ error: "Terjadi kesalahan pada server" });
   }
 });
@@ -116,7 +115,7 @@ app.post("/api/auth/logout", async (req, res) => {
   res.json({ success: true });
 });
 
-// --- PROFILE ---
+// --- PROFILE UPDATE (SAPU JAGAT) ---
 app.put("/api/profile/me", async (req, res) => {
   const sessionId = req.cookies.session_id;
   if (!sessionId) return res.status(401).json({ error: "Unauthorized" });
@@ -125,7 +124,6 @@ app.put("/api/profile/me", async (req, res) => {
   const session = sessionRes.rows[0] as any;
   if (!session) return res.status(401).json({ error: "Session expired" });
 
-  // Ambil data lama agar tidak tertimpa kosong (undefined)
   const oldDataRes = await db.execute({ sql: "SELECT * FROM members WHERE id = ?", args: [session.userId] });
   const oldData = oldDataRes.rows[0] as any;
 
@@ -149,15 +147,13 @@ app.put("/api/profile/me", async (req, res) => {
         session.userId
       ]
     });
-
     const userRes = await db.execute({ sql: "SELECT * FROM members WHERE id = ?", args: [session.userId] });
     res.json({ success: true, user: userRes.rows[0] });
   } catch (err: any) {
-    console.error("Error Profile Update:", err);
+    console.error("Profile Error:", err);
     res.status(500).json({ error: "Gagal memperbarui profil" });
   }
 });
-
 
 // --- FEED (POSTS) ---
 app.get("/api/posts", async (req, res) => {
@@ -182,81 +178,15 @@ app.post("/api/posts", async (req, res) => {
   const { userId, content, image, poll, note, activityLabel } = req.body;
   const poll_json = poll ? JSON.stringify(poll) : null;
   try {
-    // PERBAIKAN: image, note, dll dibungkus || null agar Turso tidak crash
     const result = await db.execute({
       sql: "INSERT INTO posts (userId, content, image, poll_json, note, activityLabel, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
       args: [userId, content || "", image || null, poll_json || null, note || null, activityLabel || null, Date.now()]
     });
     res.json({ id: Number(result.lastInsertRowid) });
-  } catch (err) { 
-    console.error("Post Error:", err);
-    res.status(500).json({ error: "Gagal posting" }); 
-  }
+  } catch (err) { res.status(500).json({ error: "Gagal posting" }); }
 });
 
-app.put("/api/posts/:id", isLoggedInMiddleware, async (req: res) => {
-  const { content, image, poll, note, activityLabel } = (req as any).body;
-  const poll_json = poll ? JSON.stringify(poll) : null;
-  try {
-    await db.execute({
-      sql: `UPDATE posts SET content = ?, image = ?, poll_json = ?, note = ?, activityLabel = ? WHERE id = ?`,
-      args: [content || "", image || null, poll_json || null, note || null, activityLabel || null, (req as any).params.id]
-    });
-    (res as any).json({ success: true });
-  } catch(err) { (res as any).status(500).json({ error: "Gagal update" }); }
-});
-
-app.delete("/api/posts/:id", isLoggedInMiddleware, async (req: res) => {
-  await db.batch([
-    { sql: "DELETE FROM posts WHERE id = ?", args: [(req as any).params.id] },
-    { sql: "DELETE FROM post_likes WHERE postId = ?", args: [(req as any).params.id] },
-    { sql: "DELETE FROM post_comments WHERE postId = ?", args: [(req as any).params.id] }
-  ]);
-  (res as any).json({ success: true });
-});
-
-// --- FEED INTERACTIONS (LIKE/COMMENT) ---
-app.post("/api/posts/:id/like", async (req, res) => {
-  const { userId, emoji } = req.body;
-  const postId = req.params.id;
-  const existing = await db.execute({ sql: "SELECT * FROM post_likes WHERE postId = ? AND userId = ?", args: [postId, userId] });
-  if (existing.rows.length > 0) {
-    await db.execute({ sql: "DELETE FROM post_likes WHERE postId = ? AND userId = ?", args: [postId, userId] });
-  } else {
-    await db.execute({ sql: "INSERT INTO post_likes (postId, userId, emoji) VALUES (?, ?, ?)", args: [postId, userId, emoji || '❤️'] });
-  }
-  res.json({ success: true });
-});
-
-app.post("/api/posts/:id/comments", async (req, res) => {
-  const { userId, content } = req.body;
-  const result = await db.execute({
-    sql: "INSERT INTO post_comments (postId, userId, content, createdAt) VALUES (?, ?, ?, ?)",
-    args: [req.params.id, userId, content, Date.now()]
-  });
-  res.json({ id: Number(result.lastInsertRowid) });
-});
-
-// --- BURSA TIM (ANNOUNCEMENTS) ---
-app.get("/api/announcements", async (req, res) => {
-  try {
-    const result = await db.execute("SELECT * FROM announcements ORDER BY id DESC");
-    res.json(result.rows);
-  } catch(e) { res.json([]) }
-});
-
-app.post("/api/announcements", async (req, res) => {
-  const { project, roleNeeded, initiator, deadline, wa } = req.body;
-  try {
-    const result = await db.execute({
-      sql: "INSERT INTO announcements (project, roleNeeded, initiator, deadline, wa) VALUES (?, ?, ?, ?, ?)",
-      args: [project || "", roleNeeded || "", initiator || "", deadline || "", wa || null]
-    });
-    res.json({ id: Number(result.lastInsertRowid) });
-  } catch(err) { res.status(500).json({ error: "Gagal buat pengumuman" }); }
-});
-
-// --- ROUTES STANDAR (TIDAK ADA ERROR UNDEFINED) ---
+// --- ALL OTHER FEATURES (ADMIN PANEL, dll) ---
 app.get("/api/members", async (req, res) => {
   try { const result = await db.execute("SELECT id, name, major, program, entryYear, gradYear, role, wa, nim, photo, username, bio FROM members"); res.json(result.rows); } catch(e) { res.json([]) }
 });
@@ -272,18 +202,72 @@ app.get("/api/stats", async (req, res) => {
   try { const result = await db.execute("SELECT * FROM stats ORDER BY sort_order ASC"); res.json(result.rows); } catch(e) { res.json([]) }
 });
 
-app.get("/api/banners", async (req, res) => {
-  try { const result = await db.execute("SELECT * FROM banners"); res.json(result.rows); } catch(e) { res.json([]) }
+app.post("/api/stats", isAdminMiddleware, async (req, res) => {
+  try {
+    const { label, value, icon, color, bg, sort_order, details_json } = req.body;
+    const result = await db.execute({
+      sql: "INSERT INTO stats (label, value, icon, color, bg, sort_order, details_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      args: [label || "Stat Baru", value || "0", icon || "Award", color || "text-white", bg || "bg-gradient-to-br from-blue-500 to-blue-700", sort_order || 0, details_json || "[]"]
+    });
+    res.json({ id: Number(result.lastInsertRowid) });
+  } catch (err) { res.status(500).json({ error: "Gagal membuat stat" }); }
 });
 
-app.get("/api/mentors", async (req, res) => {
-  try { const result = await db.execute("SELECT * FROM mentors"); res.json(result.rows); } catch(e) { res.json([]) }
+app.put("/api/stats/:id", isAdminMiddleware, async (req, res) => {
+  try {
+    const { label, value, icon, color, bg, sort_order, details_json } = req.body;
+    await db.execute({
+      sql: "UPDATE stats SET label = ?, value = ?, icon = ?, color = ?, bg = ?, sort_order = ?, details_json = ? WHERE id = ?",
+      args: [label || "Stat", value || "0", icon || "Award", color || "text-white", bg || "bg-gradient-to-br from-blue-500 to-blue-700", sort_order || 0, details_json || "[]", req.params.id]
+    });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: "Gagal memperbarui stat" }); }
 });
 
 app.get("/api/research", async (req, res) => {
   try { const result = await db.execute("SELECT * FROM research ORDER BY id DESC"); res.json(result.rows); } catch(e) { res.json([]) }
 });
 
+app.post("/api/research", isAdminMiddleware, async (req, res) => {
+  const { title, category, author, year } = req.body;
+  const result = await db.execute({
+    sql: "INSERT INTO research (title, category, author, year) VALUES (?, ?, ?, ?)",
+    args: [title || "Judul", category || "PKM", author || "Anonim", year || 2024]
+  });
+  res.json({ id: Number(result.lastInsertRowid) });
+});
+
+app.put("/api/research/:id", isAdminMiddleware, async (req, res) => {
+  const { title, category, author, year } = req.body;
+  await db.execute({
+    sql: "UPDATE research SET title = ?, category = ?, author = ?, year = ? WHERE id = ?",
+    args: [title || "Judul", category || "PKM", author || "Anonim", year || 2024, req.params.id]
+  });
+  res.json({ success: true });
+});
+
+app.get("/api/announcements", async (req, res) => {
+  try { const result = await db.execute("SELECT * FROM announcements ORDER BY id DESC"); res.json(result.rows); } catch(e) { res.json([]) }
+});
+
+app.post("/api/announcements", async (req, res) => {
+  const { project, roleNeeded, initiator, deadline, wa } = req.body;
+  const result = await db.execute({
+    sql: "INSERT INTO announcements (project, roleNeeded, initiator, deadline, wa) VALUES (?, ?, ?, ?, ?)",
+    args: [project || "Project", roleNeeded || "Anggota", initiator || "Anonim", deadline || "-", wa || null]
+  });
+  res.json({ id: Number(result.lastInsertRowid) });
+});
+
+app.get("/api/mentors", async (req, res) => {
+  try { const result = await db.execute("SELECT * FROM mentors"); res.json(result.rows); } catch(e) { res.json([]) }
+});
+
+app.get("/api/banners", async (req, res) => {
+  try { const result = await db.execute("SELECT * FROM banners"); res.json(result.rows); } catch(e) { res.json([]) }
+});
+
 app.get("/api/notifications", async (req, res) => { res.json([]); });
 
+// Khusus Vercel
 export default app;
