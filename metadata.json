@@ -1,0 +1,7 @@
+{
+  "name": "UKMPR-Hub",
+  "description": "A dashboard for UKMPR members to track research, find teams, and book mentors.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
