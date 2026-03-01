@@ -1162,14 +1162,6 @@ function DashboardView({ banners, stats, announcements, aiTips, news, onNavigate
     }
   };
 
-  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then(res => res.ok ? setServerStatus('online') : setServerStatus('offline'))
-      .catch(() => setServerStatus('offline'));
-  }, []);
-
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       {/* 1. Simple Greeting (Text Only) */}
