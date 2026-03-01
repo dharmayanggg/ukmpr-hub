@@ -400,13 +400,13 @@ export default function App() {
           </div>
           
           {/* Header Running Text */}
-          <div className="mt-3 overflow-hidden bg-slate-50/50 dark:bg-slate-900/30 py-1.5 border-y border-slate-100 dark:border-slate-700 -mx-5 shadow-inner">
+          <div className="mt-3 overflow-hidden bg-slate-50/50 dark:bg-slate-900/30 py-0.5 border-y border-slate-100 dark:border-slate-700 -mx-5 shadow-inner">
             <div className="flex w-max animate-marquee whitespace-nowrap">
-              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 px-4">
-                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas
+              <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
+                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas 
               </span>
-              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 px-4">
-                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas
+              <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
+                Selamat menunaikan ibadah puasa • Nyepi 2026 sebentar lagi, mari sucikan hati dalam keheningan • UKMPR terus berinovasi •
               </span>
             </div>
           </div>
