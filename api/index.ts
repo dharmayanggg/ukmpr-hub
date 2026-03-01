@@ -1,22 +1,23 @@
-import { createClient } from 'turso';
+import { createClient } from '@libsql/client';
 import express from 'express';
 import { json } from 'body-parser';
 
 const app = express();
-const port = process.env.PORT || 3000;
 
-// Turso database connection
 const client = createClient({
-    url: process.env.TURSO_URL,
-    token: process.env.TURSO_TOKEN
+    url: process.env.TURSO_DATABASE_URL as string,
+    authToken: process.env.TURSO_AUTH_TOKEN as string
 });
 
 app.use(json());
 
-// Example route for fetching data from Turso
-app.get('/data', async (req, res) => {
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: "online" });
+});
+
+app.get('/api/data', async (req, res) => {
     try {
-        const response = await client.query('SELECT * FROM your_table');
+        const response = await client.execute('SELECT 1'); 
         res.status(200).json(response);
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -24,8 +25,11 @@ app.get('/data', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log(`Server is running on http://localhost:${port}`);
+    });
+}
 
 export default app;
