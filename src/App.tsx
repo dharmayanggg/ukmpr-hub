@@ -1086,6 +1086,9 @@ export default function App() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
 // --- SUB VIEWS ---
 
