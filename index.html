@@ -5,11 +5,27 @@
     <link rel="icon" type="image/png" href="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/Logo-ukmpr" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>UKMPR-Hub</title>
+    <title>UKMPR Hub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+      /* Memaksa seluruh aplikasi menggunakan font Plus Jakarta Sans */
+      * {
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+      }
+      
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
