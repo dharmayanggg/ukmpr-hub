@@ -187,19 +187,83 @@ app.post("/api/posts", async (req, res) => {
 });
 
 // --- ALL OTHER FEATURES (ADMIN PANEL, dll) ---
+// --- ALL OTHER FEATURES (ADMIN PANEL, dll) ---
+
+// MEMBER MANAGEMENT (ADMIN)
 app.get("/api/members", async (req, res) => {
-  try { const result = await db.execute("SELECT id, name, major, program, entryYear, gradYear, role, wa, nim, photo, username, bio FROM members"); res.json(result.rows); } catch(e) { res.json([]) }
+  try { 
+    const result = await db.execute("SELECT id, name, major, program, entryYear, gradYear, role, wa, nim, photo, username, bio FROM members"); 
+    res.json(result.rows); 
+  } catch(e) { res.json([]); }
 });
 
-app.get("/api/members/username/:username", async (req, res) => {
+app.put("/api/members/:id", isAdminMiddleware, async (req: any, res: any) => {
+  const { name, major, program, entryYear, gradYear, role, wa, nim, photo, username, password } = req.body;
   try {
-    const result = await db.execute({ sql: "SELECT id, name, major, program, entryYear, gradYear, role, wa, nim, photo, username, bio FROM members WHERE username = ?", args: [req.params.username] });
-    res.json(result.rows[0] || null);
-  } catch(e) { res.status(404).json({ error: "Member not found" }); }
+    // Cek apakah username dipakai orang lain (selain member ini sendiri)
+    const checkUser = await db.execute({
+      sql: "SELECT id FROM members WHERE username = ? AND id != ?",
+      args: [username || "", req.params.id]
+    });
+    if (checkUser.rows.length > 0) return res.status(400).json({ error: "Username sudah digunakan orang lain" });
+
+    if (password && password.trim() !== "") {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await db.execute({
+        sql: `UPDATE members SET name = ?, major = ?, program = ?, entryYear = ?, gradYear = ?, role = ?, wa = ?, nim = ?, photo = ?, username = ?, password = ? WHERE id = ?`,
+        args: [name || "", major || "", program || "", entryYear || 0, gradYear || null, role || "Anggota", wa || null, nim || null, photo || null, username || "", hashedPassword, req.params.id]
+      });
+    } else {
+      await db.execute({
+        sql: `UPDATE members SET name = ?, major = ?, program = ?, entryYear = ?, gradYear = ?, role = ?, wa = ?, nim = ?, photo = ?, username = ? WHERE id = ?`,
+        args: [name || "", major || "", program || "", entryYear || 0, gradYear || null, role || "Anggota", wa || null, nim || null, photo || null, username || "", req.params.id]
+      });
+    }
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: "Gagal memperbarui member di database" });
+  }
 });
 
+app.delete("/api/members/:id", isAdminMiddleware, async (req, res) => {
+  try {
+    await db.execute({ sql: "DELETE FROM members WHERE id = ?", args: [req.params.id] });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: "Gagal menghapus member" }); }
+});
+
+// RESEARCH MANAGEMENT
+app.get("/api/research", async (req, res) => {
+  try { 
+    const result = await db.execute("SELECT * FROM research ORDER BY id DESC"); 
+    res.json(result.rows); 
+  } catch(e) { res.json([]); }
+});
+
+app.post("/api/research", isAdminMiddleware, async (req, res) => {
+  const { title, category, author, year } = req.body;
+  try {
+    const result = await db.execute({
+      sql: "INSERT INTO research (title, category, author, year) VALUES (?, ?, ?, ?)",
+      args: [title || "Tanpa Judul", category || "PKM", author || "Anonim", year || 2026]
+    });
+    res.json({ id: Number(result.lastInsertRowid) });
+  } catch(err) { res.status(500).json({ error: "Gagal menambah riset" }); }
+});
+
+app.delete("/api/research/:id", isAdminMiddleware, async (req, res) => {
+  try {
+    await db.execute({ sql: "DELETE FROM research WHERE id = ?", args: [req.params.id] });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: "Gagal menghapus riset" }); }
+});
+
+// STATS MANAGEMENT
 app.get("/api/stats", async (req, res) => {
-  try { const result = await db.execute("SELECT * FROM stats ORDER BY sort_order ASC"); res.json(result.rows); } catch(e) { res.json([]) }
+  try { 
+    const result = await db.execute("SELECT * FROM stats ORDER BY sort_order ASC"); 
+    res.json(result.rows); 
+  } catch(e) { res.json([]); }
 });
 
 app.post("/api/stats", isAdminMiddleware, async (req, res) => {
@@ -213,50 +277,16 @@ app.post("/api/stats", isAdminMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: "Gagal membuat stat" }); }
 });
 
-app.put("/api/stats/:id", isAdminMiddleware, async (req, res) => {
+app.delete("/api/stats/:id", isAdminMiddleware, async (req, res) => {
   try {
-    const { label, value, icon, color, bg, sort_order, details_json } = req.body;
-    await db.execute({
-      sql: "UPDATE stats SET label = ?, value = ?, icon = ?, color = ?, bg = ?, sort_order = ?, details_json = ? WHERE id = ?",
-      args: [label || "Stat", value || "0", icon || "Award", color || "text-white", bg || "bg-gradient-to-br from-blue-500 to-blue-700", sort_order || 0, details_json || "[]", req.params.id]
-    });
+    await db.execute({ sql: "DELETE FROM stats WHERE id = ?", args: [req.params.id] });
     res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: "Gagal memperbarui stat" }); }
+  } catch(e) { res.status(500).json({ error: "Gagal menghapus stat" }); }
 });
 
-app.get("/api/research", async (req, res) => {
-  try { const result = await db.execute("SELECT * FROM research ORDER BY id DESC"); res.json(result.rows); } catch(e) { res.json([]) }
-});
-
-app.post("/api/research", isAdminMiddleware, async (req, res) => {
-  const { title, category, author, year } = req.body;
-  const result = await db.execute({
-    sql: "INSERT INTO research (title, category, author, year) VALUES (?, ?, ?, ?)",
-    args: [title || "Judul", category || "PKM", author || "Anonim", year || 2024]
-  });
-  res.json({ id: Number(result.lastInsertRowid) });
-});
-
-app.put("/api/research/:id", isAdminMiddleware, async (req, res) => {
-  const { title, category, author, year } = req.body;
-  await db.execute({
-    sql: "UPDATE research SET title = ?, category = ?, author = ?, year = ? WHERE id = ?",
-    args: [title || "Judul", category || "PKM", author || "Anonim", year || 2024, req.params.id]
-  });
-  res.json({ success: true });
-});
-
+// OTHERS
 app.get("/api/announcements", async (req, res) => {
   try { const result = await db.execute("SELECT * FROM announcements ORDER BY id DESC"); res.json(result.rows); } catch(e) { res.json([]) }
-});
-
-app.post("/api/announcements", async (req, res) => {
-  const { project, roleNeeded, initiator, deadline, wa } = req.body;
-  const result = await db.execute({
-    sql: "INSERT INTO announcements (project, roleNeeded, initiator, deadline, wa) VALUES (?, ?, ?, ?, ?)",
-    args: [project || "Project", roleNeeded || "Anggota", initiator || "Anonim", deadline || "-", wa || null]
-  });
-  res.json({ id: Number(result.lastInsertRowid) });
 });
 
 app.get("/api/mentors", async (req, res) => {
