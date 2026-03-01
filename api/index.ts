@@ -300,8 +300,8 @@ app.post("/api/mentors", isAdminMiddleware, async (req, res) => {
       args: [
         name || "Nama Mentor", 
         expertise || "Bidang Keahlian", 
-        rating || 5, 
-        available !== undefined ? available : 1, 
+        Number(rating) || 5, 
+        available !== undefined ? Number(available) : 1, 
         experience || "-", 
         education || "-", 
         achievements || "-", 
@@ -310,7 +310,8 @@ app.post("/api/mentors", isAdminMiddleware, async (req, res) => {
     });
     res.json({ id: Number(result.lastInsertRowid) });
   } catch(err) { 
-    res.status(500).json({ error: "Gagal menambah mentor" }); 
+    console.error("Gagal simpan mentor:", err);
+    res.status(500).json({ error: "Gagal menyimpan data mentor ke database" }); 
   }
 });
 
@@ -329,9 +330,8 @@ app.get("/api/banners", async (req, res) => {
   } catch(e) { res.json([]); }
 });
 
-app.get("/api/notifications", async (req, res) => { 
-  res.json([]); 
-});
+app.get("/api/notifications", async (req, res) => { res.json([]); });
+
 
 // Khusus Vercel
 export default app;
