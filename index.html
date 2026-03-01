@@ -15,12 +15,29 @@
       /* Memaksa seluruh aplikasi menggunakan font Plus Jakarta Sans */
       * {
         font-family: 'Plus Jakarta Sans', sans-serif !important;
+        /* Menghapus kotak biru default saat tombol diklik di HP agar lebih clean */
+        -webkit-tap-highlight-color: transparent;
       }
       
+      /* --- FITUR SELECTION COLOR --- */
+      ::selection {
+        background-color: rgba(59, 130, 246, 0.2); /* Biru transparan (20% opacity) */
+        color: #2563eb; /* Warna teks jadi biru tegas saat diblok */
+      }
+      
+      /* Untuk browser Firefox */
+      ::-moz-selection {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: #2563eb;
+      }
+
       body {
         margin: 0;
         padding: 0;
         overflow-x: hidden;
+        /* Menghaluskan tampilan font di layar */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
     </style>
   </head>
