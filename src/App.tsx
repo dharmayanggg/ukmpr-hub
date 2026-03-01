@@ -371,7 +371,7 @@ export default function App() {
                 <h1 className={`text-lg font-extrabold tracking-tight leading-none truncate ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
                   UKMPR<span className="text-blue-600 dark:text-blue-400"> Hub</span>
                 </h1>
-                <p className="text-[9px] text-slate-500 font-bold truncate mt-0.5 uppercase tracking-tighter">Apps UKMPR IAHN Gde Pudja</p>
+                <p className="text-[9px] text-slate-500 font-italic truncate mt-0.5 tittlecase tracking-tighter">Aplikasi UKMPR Gde Pudja</p>
               </div>
             </div>
 
