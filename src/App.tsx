@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Home, BookOpen, Users, MessageSquare, Bell, 
@@ -5,7 +6,7 @@ import {
   FileText, CheckCircle, Download, Star, 
   MoreHorizontal, Upload, Settings, LogOut, ChevronRight, ChevronLeft, X, UserCircle, Camera, Phone,
   Palette, Globe, Info, MapPin, Instagram, Moon, Sun, Heart, MessageCircle, Share2, Send,
-  Lightbulb, PenTool, Cpu, Rocket, Database, Zap, Shield, Plus, Edit2, Trash2, Lock, Bot, Eye, EyeOff
+  Lightbulb, PenTool, Cpu, Rocket, Database, Zap, Shield, Plus, Edit2, Trash2, Lock, Bot
 } from 'lucide-react';
 import { getAiGreeting, getAiTips, getAiNews, brainstormInitiate, brainstormMessage } from './services/geminiService';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -136,7 +137,6 @@ export default function App() {
   const [memberView, setMemberView] = useState('menu'); // menu, profile, list, card, settings
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [listFilter, setListFilter] = useState('');
   const [researchDocs, setResearchDocs] = useState<ResearchDoc[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -149,7 +149,8 @@ export default function App() {
   const [aiTips, setAiTips] = useState('');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  
+  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+
   useEffect(() => {
   const handlePopState = (event: PopStateEvent) => {
     if (event.state && event.state.tab) {
@@ -164,7 +165,17 @@ export default function App() {
   return () => window.removeEventListener('popstate', handlePopState);
 }, []);
 
-    const [isPostingModalOpen, setIsPostingModalOpen] = useState(false);
+  useEffect(() => {
+    const checkHealth = () => {
+      fetch('/api/health')
+        .then(res => res.ok ? setServerStatus('online') : setServerStatus('offline'))
+        .catch(() => setServerStatus('offline'));
+    };
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, []);
+  const [isPostingModalOpen, setIsPostingModalOpen] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [isAdOpen, setIsAdOpen] = useState(true);
 
@@ -358,8 +369,8 @@ export default function App() {
         {/* TOP HEADER */}
         <header className={`${isDarkMode ? 'bg-slate-800 bg-opacity-90 border-slate-700' : 'bg-white bg-opacity-90 border-slate-100'} backdrop-blur-md border-b flex flex-col px-5 shrink-0 sticky top-0 z-30 pt-3 pb-2`}>
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1.5 mr-1">
                 <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/logo-iahn.png" alt="Logo IAHN" className="h-7 w-auto object-contain" referrerPolicy="no-referrer" />
                 <img src="https://storage.googleapis.com/ai-studio-bucket-353083286262-us-west1/Ukmpr/Logo-ukmpr" alt="Logo UKMPR" className="h-7 w-auto object-contain" referrerPolicy="no-referrer" />
               </div>
@@ -391,7 +402,13 @@ export default function App() {
               >
                 <Settings size={20} />
               </button>
-                          </div>
+              {/* Server Status Dot */}
+              <div className={`w-3 h-3 rounded-full ${
+                serverStatus === 'online' ? 'bg-green-500 animate-pulse' : 
+                serverStatus === 'offline' ? 'bg-red-500' : 
+                'bg-slate-400'
+              }`} title={`Server: ${serverStatus}`} />
+            </div>
           </div>
           
           {/* Header Running Text */}
@@ -925,24 +942,7 @@ export default function App() {
                             </>
                             )}
                             <input name="username" type="text" placeholder="Username" required className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`} />
-                            
-<div className="relative">
-  <input
-    name="password"
-    type={showPassword ? "text" : "password"}
-    placeholder="Password"
-    required
-    className={`w-full p-3 pr-10 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`}
-  />
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
-  >
-    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-  </button>
-</div>
-
+                            <input name="password" type="password" placeholder="Password" required className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`} />
                             {isRegistering && <p className="text-[10px] text-slate-400 px-2 -mt-2">Minimal 6 karakter, dengan huruf besar, angka & simbol.</p>}
                             
                             {authError && <p className={`text-xs text-red-500 text-center ${isDarkMode ? 'bg-red-900/20' : 'bg-red-50'} p-2 rounded-lg`}>{authError}</p>}
@@ -995,24 +995,7 @@ export default function App() {
                     }
                   }} className="w-full max-w-xs space-y-3">
                     <input name="username" required placeholder="Admin Username" className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`} />
-                    
-<div className="relative">
-  <input
-    name="password"
-    type={showPassword ? "text" : "password"}
-    placeholder="Password"
-    required
-    className={`w-full p-3 pr-10 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`}
-  />
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
-  >
-    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-  </button>
-</div>
-
+                    <input name="password" type="password" required placeholder="Admin Password" className={`w-full p-3 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`} />
                     <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500">
                       Masuk Dashboard
                     </button>
@@ -1156,7 +1139,14 @@ function DashboardView({ banners, stats, announcements, aiTips, news, onNavigate
     }
   };
 
-  
+  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+
+  useEffect(() => {
+    fetch('/api/health')
+      .then(res => res.ok ? setServerStatus('online') : setServerStatus('offline'))
+      .catch(() => setServerStatus('offline'));
+  }, []);
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       {/* 1. Simple Greeting (Text Only) */}
@@ -2009,7 +1999,7 @@ function PostCard({
         />
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center space-x-2">
               <h4 
                 className="font-bold text-sm text-slate-800 dark:text-white cursor-pointer hover:text-blue-600 transition-colors"
                 onClick={() => onViewUser(post.authorUsername)}
@@ -2018,7 +2008,7 @@ function PostCard({
               </h4>
               <span className="text-[10px] text-slate-400">• {new Date(post.createdAt).toLocaleDateString()}</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center space-x-2">
               {post.activityLabel && (
                 <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
                   {post.activityLabel}
@@ -2156,7 +2146,7 @@ function PostCard({
                 ))}
               </div>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center space-x-2">
                 <input 
                   type="text" 
                   value={commentContent}
@@ -2652,7 +2642,7 @@ function FeedView({ posts, setPosts, myProfile, setMyProfile, isPostingModalOpen
                       onChange={(e) => setPoll({ ...poll, question: e.target.value })}
                     />
                     {poll.options.map((opt, idx) => (
-                      <div key={idx} className="flex items-center gap-3">
+                      <div key={idx} className="flex items-center space-x-2">
                         <input 
                           type="text" 
                           placeholder={`Opsi ${idx + 1}`} 
@@ -3778,24 +3768,7 @@ function AdminView({ fetchData, members, researchDocs, announcements, mentors, b
             }} className={`p-3 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-50'} rounded-xl space-y-2 border border-slate-100 dark:border-slate-700`}>
               <input name="name" defaultValue={editingItem?.name || ''} placeholder="Nama Lengkap" className={`w-full p-2 text-xs border ${isDarkMode ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-200'} rounded-lg`} required />
               <input name="username" defaultValue={editingItem?.username || ''} placeholder="Username (Login)" className={`w-full p-2 text-xs border ${isDarkMode ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-200'} rounded-lg`} required />
-              
-<div className="relative">
-  <input
-    name="password"
-    type={showPassword ? "text" : "password"}
-    placeholder="Password"
-    required
-    className={`w-full p-3 pr-10 border ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-200'} rounded-xl text-sm`}
-  />
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600"
-  >
-    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-  </button>
-</div>
-
+              <input name="password" type="password" placeholder={editingItem ? "Password Baru (Kosongkan jika tetap)" : "Password"} className={`w-full p-2 text-xs border ${isDarkMode ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-200'} rounded-lg`} required={!editingItem} />
               <input name="nim" defaultValue={editingItem?.nim || ''} placeholder="NIM" className={`w-full p-2 text-xs border ${isDarkMode ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-200'} rounded-lg`} required />
               <select name="role" defaultValue={editingItem?.role || 'Anggota'} className={`w-full p-2 text-xs border ${isDarkMode ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-200'} rounded-lg`} required>
                 <option value="Anggota">Anggota</option>
@@ -3950,4 +3923,3 @@ function FeedProfileEdit({ myProfile, setMyProfile, isDarkMode }: { myProfile: M
     </div>
   );
 }
-
