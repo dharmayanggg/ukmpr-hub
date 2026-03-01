@@ -399,18 +399,56 @@ export default function App() {
             </div>
           </div>
           
-          {/* Header Running Text */}
-          <div className="mt-3 overflow-hidden bg-slate-50/50 dark:bg-slate-900/30 py-0.5 border-y border-slate-100 dark:border-slate-700 -mx-5 shadow-inner">
-            <div className="flex w-max animate-marquee whitespace-nowrap">
-              <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
-                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas 
-              </span>
-              <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
-                Selamat menunaikan ibadah puasa • Nyepi 2026 sebentar lagi, mari sucikan hati dalam keheningan • UKMPR terus berinovasi •
-              </span>
-            </div>
-          </div>
-        </header>
+          {/* Header Typewriter - Multi Sentence Pro */}
+<div className="mt-2 py-1 flex justify-center w-full">
+  <p className="text-[10px] text-slate-500 dark:text-slate-400 px-5 min-h-[1rem] tracking-normal text-center">
+    {(() => {
+      const [text, setText] = useState("");
+      const [isDeleting, setIsDeleting] = useState(false);
+      const [loop, setLoop] = useState(0);
+      const [typingSpeed, setTypingSpeed] = useState(100);
+
+      const phrases = [
+        "Gde Pudja Creativity Fair 13-15 Mei 2026",
+        "Selamat Menunaikan Ibadah Puasa",
+        "Nyepi 2026: Menyucikan diri dalam keheningan",
+        "UKMPR selalu berinovasi",
+        "Gabung UKMPR, biar jago penelitian"
+      ];
+
+      useEffect(() => {
+        const handleTyping = () => {
+          const currentPhrase = phrases[loop % phrases.length];
+          const fullText = currentPhrase;
+
+          setText(isDeleting 
+            ? fullText.substring(0, text.length - 1) 
+            : fullText.substring(0, text.length + 1)
+          );
+
+          setTypingSpeed(isDeleting ? 50 : 100);
+
+          if (!isDeleting && text === fullText) {
+            setTimeout(() => setIsDeleting(true), 2000);
+          } else if (isDeleting && text === "") {
+            setIsDeleting(false);
+            setLoop(loop + 1);
+          }
+        };
+
+        const timer = setTimeout(handleTyping, typingSpeed);
+        return () => clearTimeout(timer);
+      }, [text, isDeleting, loop]);
+
+      return (
+        <span className="inline-flex items-center">
+          {text}
+          <span className="w-[1.5px] h-3 bg-blue-500 ml-1 animate-pulse"></span>
+        </span>
+      );
+    })()}
+  </p>
+</div>
 
         {/* NOTIFICATION MODAL */}
         {isNotificationOpen && (
