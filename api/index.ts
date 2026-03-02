@@ -242,7 +242,8 @@ app.post("/api/announcements", auth, async (req: any, res: any) => {
   try {
     await db.execute({ 
       sql: "INSERT INTO announcements (project, roleNeeded, initiator, status, deadline, wa, createdAt) VALUES (?,?,?,?,?,?,?)", 
-      args: [project, roleNeeded, initiator, status || "Open", deadline||null, wa||null, Date.now()] 
+      // Kita tambahkan fallback || "" agar Turso tidak crash jika ada form yang kosong
+      args: [project || "", roleNeeded || "", initiator || "", status || "Open", deadline || null, wa || null, Date.now()] 
     });
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
