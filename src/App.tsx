@@ -317,7 +317,7 @@ export default function App() {
 
   const markNotificationsRead = async () => {
     try {
-      await fetch('/api/notifications/read', { method: 'PUT' });
+      await fetch('/api/notifications/read', { method: 'PUT', credentials: 'include' });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: 1 })));
     } catch (err) {
       console.error("Failed to mark notifications as read", err);
@@ -834,6 +834,7 @@ export default function App() {
                       
                       const res = await fetch(`/api/profile/me`, {
                         method: 'PUT',
+                        credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(newProfile)
                       });
@@ -1024,6 +1025,7 @@ export default function App() {
                     try {
                       const res = await fetch('/api/auth/login', {
                         method: 'POST',
+                        credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                       });
@@ -1678,6 +1680,7 @@ function BrainstormingView({ onClose, myProfile, isDarkMode }: { onClose: () => 
       // Save to backend
       await fetch('/api/brainstorm/save', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages: [
@@ -1720,6 +1723,7 @@ function BrainstormingView({ onClose, myProfile, isDarkMode }: { onClose: () => 
       // Save to backend
       await fetch('/api/brainstorm/save', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages: [
@@ -2429,7 +2433,7 @@ function FeedView({ posts, setPosts, myProfile, setMyProfile, isPostingModalOpen
     // Optimistic Delete
     setPosts((prev: Post[]) => prev.filter(p => p.id !== postId));
 
-    const res = await fetch(`/api/posts/${postId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/posts/${postId}`, { method: 'DELETE', credentials: 'include' });
     if (!res.ok) {
       alert('Gagal menghapus postingan');
       const updated = await fetch('/api/posts').then(r => r.json());
@@ -2474,6 +2478,7 @@ function FeedView({ posts, setPosts, myProfile, setMyProfile, isPostingModalOpen
 
     const res = await fetch(`/api/posts/${postId}/vote`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: myProfile.id, optionIndex })
     });
@@ -2507,6 +2512,7 @@ function FeedView({ posts, setPosts, myProfile, setMyProfile, isPostingModalOpen
 
     const res = await fetch(`/api/posts/${postId}/like`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: myProfile.id, emoji })
     });
@@ -2547,6 +2553,7 @@ function FeedView({ posts, setPosts, myProfile, setMyProfile, isPostingModalOpen
 
     const res = await fetch(`/api/posts/${postId}/comments`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: myProfile.id, content: commentContent })
     });
@@ -3044,6 +3051,7 @@ function RepositoryView({ docs, fetchData, isDarkMode }: { docs: ResearchDoc[], 
             
             await fetch('/api/research', {
               method: 'POST',
+              credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(newDoc)
             });
@@ -3155,6 +3163,7 @@ function BursaTimView({ requests, fetchData, openWhatsApp, isDarkMode }: { reque
             
             await fetch('/api/announcements', {
               method: 'POST',
+              credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(newRequest)
             });
@@ -3884,6 +3893,7 @@ function FeedProfileEdit({ myProfile, setMyProfile, isDarkMode }: { myProfile: M
     try {
       const res = await fetch('/api/profile/me', {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...myProfile,
