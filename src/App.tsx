@@ -406,7 +406,7 @@ export default function App() {
                 Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas 
               </span>
               <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
-                Selamat menunaikan ibadah puasa • Nyepi 2026 sebentar lagi, mari sucikan hati dalam keheningan • UKMPR terus berinovasi •
+                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas
               </span>
             </div>
           </div>
