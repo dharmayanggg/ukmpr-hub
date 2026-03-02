@@ -7,15 +7,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// --- KONEKSI DATABASE ---
 const db = createClient({
-  url: process.env.TURSO_DATABASE_URL || "libsql://ukmpr-db-dharmayanggg.aws-ap-northeast-1.turso.io",
+  url: process.env.TURSO_DATABASE_URL as string,
   authToken: process.env.TURSO_AUTH_TOKEN as string,
 });
 
 const app = express();
 
-// --- CORS & CREDENTIALS ---
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "https://ukmpr-hub.vercel.app");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -28,362 +26,310 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "50mb" }));
 app.use(cookieParser());
 
-// --- MIDDLEWARE: Cek Login ---
-const isLoggedInMiddleware = async (req: any, res: any, next: any) => {
+const auth = async (req: any, res: any, next: any) => {
   const sessionId = req.cookies.session_id;
   if (!sessionId) return res.status(401).json({ error: "Unauthorized" });
   try {
-    const sessionRes = await db.execute({
-      sql: "SELECT * FROM sessions WHERE id = ? AND expiresAt > ?",
-      args: [sessionId, Date.now()],
-    });
-    const session = sessionRes.rows[0] as any;
-    if (!session) return res.status(401).json({ error: "Session expired" });
-
-    const userRes = await db.execute({
-      sql: "SELECT * FROM members WHERE id = ?",
-      args: [session.userId],
-    });
-    const user = userRes.rows[0] as any;
-    if (!user) return res.status(401).json({ error: "User not found" });
-
-    req.user = user;
+    const s = await db.execute({ sql: "SELECT * FROM sessions WHERE id = ? AND expiresAt > ?", args: [sessionId, Date.now()] });
+    if (!s.rows[0]) return res.status(401).json({ error: "Session expired" });
+    const u = await db.execute({ sql: "SELECT * FROM members WHERE id = ?", args: [(s.rows[0] as any).userId] });
+    if (!u.rows[0]) return res.status(401).json({ error: "User not found" });
+    req.user = u.rows[0];
     next();
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }
+  } catch { res.status(500).json({ error: "Server error" }); }
 };
 
-// --- HEALTH CHECK ---
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+const adminAuth = async (req: any, res: any, next: any) => {
+  await auth(req, res, () => {
+    if ((req.user as any)?.role !== 'Admin') return res.status(403).json({ error: "Forbidden" });
+    next();
+  });
+};
 
-// --- AUTH: Register ---
+app.get("/api/health", (req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
+
+// AUTH
 app.post("/api/auth/register", async (req, res) => {
-  const { name, username, password, major, program, entryYear, wa, nim, photo } = req.body;
+  const { name, username, password, major, program, entryYear, wa, nim, photo, role } = req.body;
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(password, 10);
     await db.execute({
-      sql: `INSERT INTO members (name, username, password, major, program, entryYear, role, wa, nim, photo)
-            VALUES (?, ?, ?, ?, ?, ?, 'Anggota', ?, ?, ?)`,
-      args: [name || "", username || "", hashedPassword, major || "", program || "", entryYear || 0, wa || null, nim || null, photo || null],
+      sql: `INSERT INTO members (name, username, password, major, program, entryYear, role, wa, nim, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [name||"", username||"", hashed, major||"", program||"", entryYear||0, role||"Anggota", wa||null, nim||null, photo||null],
     });
     res.status(201).json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal register" });
-  }
+  } catch (err: any) { res.status(500).json({ error: err.message || "Gagal register" }); }
 });
 
-// --- AUTH: Login ---
 app.post("/api/auth/login", async (req, res) => {
   const { username, password } = req.body;
   try {
-    const userRes = await db.execute({
-      sql: "SELECT * FROM members WHERE username = ?",
-      args: [username],
-    });
-    const user = userRes.rows[0] as any;
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(400).json({ error: "Username atau password salah" });
-    }
+    const r = await db.execute({ sql: "SELECT * FROM members WHERE username = ?", args: [username] });
+    const user = r.rows[0] as any;
+    if (!user || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ error: "Username atau password salah" });
     const sessionId = crypto.randomUUID();
-    const expiresAt = Date.now() + 604800000;
-    await db.execute({
-      sql: "INSERT INTO sessions (id, userId, expiresAt) VALUES (?, ?, ?)",
-      args: [sessionId, user.id, expiresAt],
-    });
-    res.cookie("session_id", sessionId, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 604800000,
-    });
+    await db.execute({ sql: "INSERT INTO sessions (id, userId, expiresAt) VALUES (?, ?, ?)", args: [sessionId, user.id, Date.now()+604800000] });
+    res.cookie("session_id", sessionId, { httpOnly: true, secure: true, sameSite: "none", maxAge: 604800000 });
     res.json({ success: true, user });
-  } catch (err) {
-    res.status(500).json({ error: "Login gagal" });
-  }
+  } catch { res.status(500).json({ error: "Login gagal" }); }
 });
 
-// --- AUTH: Me ---
 app.get("/api/auth/me", async (req, res) => {
   const sessionId = req.cookies.session_id;
   if (!sessionId) return res.json(null);
   try {
-    const sessionRes = await db.execute({
-      sql: "SELECT userId FROM sessions WHERE id = ? AND expiresAt > ?",
-      args: [sessionId, Date.now()],
-    });
-    if (sessionRes.rows.length === 0) {
-      res.clearCookie("session_id");
-      return res.json(null);
-    }
-    const userRes = await db.execute({
-      sql: "SELECT * FROM members WHERE id = ?",
-      args: [(sessionRes.rows[0] as any).userId],
-    });
-    res.json(userRes.rows[0] || null);
-  } catch (e) {
-    res.json(null);
-  }
+    const s = await db.execute({ sql: "SELECT userId FROM sessions WHERE id = ? AND expiresAt > ?", args: [sessionId, Date.now()] });
+    if (!s.rows[0]) { res.clearCookie("session_id"); return res.json(null); }
+    const u = await db.execute({ sql: "SELECT * FROM members WHERE id = ?", args: [(s.rows[0] as any).userId] });
+    res.json(u.rows[0] || null);
+  } catch { res.json(null); }
 });
 
-// --- AUTH: Logout ---
 app.post("/api/auth/logout", async (req, res) => {
   const sessionId = req.cookies.session_id;
-  if (sessionId) {
-    await db.execute({ sql: "DELETE FROM sessions WHERE id = ?", args: [sessionId] }).catch(() => {});
-  }
+  if (sessionId) await db.execute({ sql: "DELETE FROM sessions WHERE id = ?", args: [sessionId] }).catch(()=>{});
   res.clearCookie("session_id");
   res.json({ success: true });
 });
 
-// --- POSTS: Get All ---
+// PROFILE
+app.put("/api/profile/me", auth, async (req: any, res: any) => {
+  const { name, username, bio, photo } = req.body;
+  try {
+    await db.execute({ sql: "UPDATE members SET name=?, username=?, bio=?, photo=? WHERE id=?", args: [name, username, bio||null, photo||null, req.user.id] });
+    const u = await db.execute({ sql: "SELECT * FROM members WHERE id=?", args: [req.user.id] });
+    res.json({ success: true, user: u.rows[0] });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// POSTS
 app.get("/api/posts", async (req, res) => {
   try {
-    const postsRes = await db.execute(`
-      SELECT posts.*, members.username as authorUsername, members.photo as authorPhoto,
-             members.role as authorRole, members.name as authorName
-      FROM posts
-      JOIN members ON posts.userId = members.id
-      ORDER BY posts.createdAt DESC
-    `);
-    const posts = postsRes.rows as any[];
-    const enhancedPosts = await Promise.all(
-      posts.map(async (post) => {
-        const likesRes = await db.execute({
-          sql: "SELECT userId, emoji FROM post_likes WHERE postId = ?",
-          args: [post.id],
-        });
-        const commentsRes = await db.execute({
-          sql: `SELECT post_comments.*, members.username as authorUsername, members.photo as authorPhoto
-                FROM post_comments
-                JOIN members ON post_comments.userId = members.id
-                WHERE postId = ? ORDER BY createdAt ASC`,
-          args: [post.id],
-        });
-        const votesRes = await db.execute({
-          sql: "SELECT userId, optionIndex FROM post_votes WHERE postId = ?",
-          args: [post.id],
-        });
-        return {
-          ...post,
-          likes: likesRes.rows,
-          comments: commentsRes.rows,
-          votes: votesRes.rows,
-          poll: post.poll_json ? JSON.parse(post.poll_json) : null,
-        };
-      })
-    );
-    res.json(enhancedPosts);
-  } catch (e) {
-    res.json([]);
-  }
+    const p = await db.execute(`SELECT posts.*, members.username as authorUsername, members.photo as authorPhoto, members.role as authorRole, members.name as authorName FROM posts JOIN members ON posts.userId = members.id ORDER BY posts.createdAt DESC`);
+    const enhanced = await Promise.all((p.rows as any[]).map(async post => {
+      const likes = await db.execute({ sql: "SELECT userId, emoji FROM post_likes WHERE postId=?", args: [post.id] });
+      const comments = await db.execute({ sql: `SELECT post_comments.*, members.username as authorUsername, members.photo as authorPhoto FROM post_comments JOIN members ON post_comments.userId=members.id WHERE postId=? ORDER BY createdAt ASC`, args: [post.id] });
+      const votes = await db.execute({ sql: "SELECT userId, optionIndex FROM post_votes WHERE postId=?", args: [post.id] });
+      return { ...post, likes: likes.rows, comments: comments.rows, votes: votes.rows, poll: post.poll_json ? JSON.parse(post.poll_json) : null };
+    }));
+    res.json(enhanced);
+  } catch { res.json([]); }
 });
 
-// --- POSTS: Create ---
-app.post("/api/posts", isLoggedInMiddleware, async (req: any, res: any) => {
+app.post("/api/posts", auth, async (req: any, res: any) => {
   const { content, image, poll_json } = req.body;
   try {
-    await db.execute({
-      sql: "INSERT INTO posts (userId, content, image, poll_json, createdAt) VALUES (?, ?, ?, ?, ?)",
-      args: [req.user.id, content || "", image || null, poll_json || null, Date.now()],
-    });
+    await db.execute({ sql: "INSERT INTO posts (userId, content, image, poll_json, createdAt) VALUES (?,?,?,?,?)", args: [req.user.id, content||"", image||null, poll_json||null, Date.now()] });
     res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal buat post" });
-  }
+  } catch { res.status(500).json({ error: "Gagal buat post" }); }
 });
 
-// --- POSTS: Like / Unlike ---
-app.post("/api/posts/:id/like", isLoggedInMiddleware, async (req: any, res: any) => {
-  const postId = req.params.id;
-  const userId = req.user.id;
+app.delete("/api/posts/:id", auth, async (req: any, res: any) => {
+  try {
+    await db.execute({ sql: "DELETE FROM posts WHERE id=? AND userId=?", args: [req.params.id, req.user.id] });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: "Gagal hapus post" }); }
+});
+
+app.post("/api/posts/:id/like", auth, async (req: any, res: any) => {
   const { emoji } = req.body;
   try {
-    const existing = await db.execute({
-      sql: "SELECT * FROM post_likes WHERE postId = ? AND userId = ?",
-      args: [postId, userId],
-    });
-    if (existing.rows.length > 0) {
-      await db.execute({
-        sql: "DELETE FROM post_likes WHERE postId = ? AND userId = ?",
-        args: [postId, userId],
-      });
+    const ex = await db.execute({ sql: "SELECT * FROM post_likes WHERE postId=? AND userId=?", args: [req.params.id, req.user.id] });
+    if (ex.rows.length > 0) {
+      await db.execute({ sql: "DELETE FROM post_likes WHERE postId=? AND userId=?", args: [req.params.id, req.user.id] });
       res.json({ success: true, action: "unliked" });
     } else {
-      await db.execute({
-        sql: "INSERT INTO post_likes (postId, userId, emoji) VALUES (?, ?, ?)",
-        args: [postId, userId, emoji || "👍"],
-      });
+      await db.execute({ sql: "INSERT INTO post_likes (postId, userId, emoji) VALUES (?,?,?)", args: [req.params.id, req.user.id, emoji||"👍"] });
       res.json({ success: true, action: "liked" });
     }
-  } catch (err) {
-    res.status(500).json({ error: "Gagal proses like" });
-  }
+  } catch { res.status(500).json({ error: "Gagal like" }); }
 });
 
-// --- POSTS: Vote ---
-app.post("/api/posts/:id/vote", isLoggedInMiddleware, async (req: any, res: any) => {
-  const postId = req.params.id;
-  const userId = req.user.id;
+app.post("/api/posts/:id/vote", auth, async (req: any, res: any) => {
   const { optionIndex } = req.body;
   try {
-    const existing = await db.execute({
-      sql: "SELECT * FROM post_votes WHERE postId = ? AND userId = ?",
-      args: [postId, userId],
-    });
-    if (existing.rows.length > 0) {
-      await db.execute({
-        sql: "UPDATE post_votes SET optionIndex = ? WHERE postId = ? AND userId = ?",
-        args: [optionIndex, postId, userId],
-      });
+    const ex = await db.execute({ sql: "SELECT * FROM post_votes WHERE postId=? AND userId=?", args: [req.params.id, req.user.id] });
+    if (ex.rows.length > 0) {
+      await db.execute({ sql: "UPDATE post_votes SET optionIndex=? WHERE postId=? AND userId=?", args: [optionIndex, req.params.id, req.user.id] });
     } else {
-      await db.execute({
-        sql: "INSERT INTO post_votes (postId, userId, optionIndex) VALUES (?, ?, ?)",
-        args: [postId, userId, optionIndex],
-      });
+      await db.execute({ sql: "INSERT INTO post_votes (postId, userId, optionIndex) VALUES (?,?,?)", args: [req.params.id, req.user.id, optionIndex] });
     }
     res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal vote" });
-  }
+  } catch { res.status(500).json({ error: "Gagal vote" }); }
 });
 
-// --- POSTS: Comment ---
-app.post("/api/posts/:id/comments", isLoggedInMiddleware, async (req: any, res: any) => {
-  const postId = req.params.id;
-  const userId = req.user.id;
+app.post("/api/posts/:id/comments", auth, async (req: any, res: any) => {
   const { content } = req.body;
   try {
-    await db.execute({
-      sql: "INSERT INTO post_comments (postId, userId, content, createdAt) VALUES (?, ?, ?, ?)",
-      args: [postId, userId, content || "", Date.now()],
-    });
+    await db.execute({ sql: "INSERT INTO post_comments (postId, userId, content, createdAt) VALUES (?,?,?,?)", args: [req.params.id, req.user.id, content||"", Date.now()] });
     res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal simpan komentar" });
-  }
+  } catch { res.status(500).json({ error: "Gagal komentar" }); }
 });
 
-// --- MENTORS ---
-app.get("/api/mentors", async (req, res) => {
+// STATS
+app.get("/api/stats", async (req, res) => {
+  try { res.json((await db.execute("SELECT * FROM stats ORDER BY sort_order ASC")).rows); } catch { res.json([]); }
+});
+app.get("/api/stats/:id/details", async (req, res) => {
   try {
-    const result = await db.execute("SELECT * FROM mentors ORDER BY rating DESC");
-    res.json(result.rows);
-  } catch (e) {
-    res.json([]);
-  }
+    const r = await db.execute({ sql: "SELECT details_json FROM stats WHERE id=?", args: [req.params.id] });
+    res.json(r.rows[0] ? JSON.parse((r.rows[0] as any).details_json || "[]") : []);
+  } catch { res.json([]); }
+});
+app.post("/api/stats", adminAuth, async (req: any, res: any) => {
+  const { label, value, icon, color, bg, sort_order, details_json } = req.body;
+  try {
+    await db.execute({ sql: "INSERT INTO stats (label, value, icon, color, bg, sort_order, details_json) VALUES (?,?,?,?,?,?,?)", args: [label, value, icon, color||"text-white", bg, sort_order||0, details_json||"[]"] });
+    res.json({ success: true });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+app.put("/api/stats/:id", adminAuth, async (req: any, res: any) => {
+  const { label, value, icon, color, bg, sort_order, details_json } = req.body;
+  try {
+    await db.execute({ sql: "UPDATE stats SET label=?,value=?,icon=?,color=?,bg=?,sort_order=?,details_json=? WHERE id=?", args: [label, value, icon, color||"text-white", bg, sort_order||0, details_json||"[]", req.params.id] });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: "Gagal update stat" }); }
+});
+app.delete("/api/stats/:id", adminAuth, async (req: any, res: any) => {
+  try { await db.execute({ sql: "DELETE FROM stats WHERE id=?", args: [req.params.id] }); res.json({ success: true }); }
+  catch { res.status(500).json({ error: "Gagal hapus stat" }); }
 });
 
-app.post("/api/mentors", isLoggedInMiddleware, async (req: any, res: any) => {
+// BANNERS
+app.get("/api/banners", async (req, res) => {
+  try { res.json((await db.execute("SELECT * FROM banners")).rows); } catch { res.json([]); }
+});
+app.post("/api/banners", adminAuth, async (req: any, res: any) => {
+  const { title, image, link } = req.body;
+  try {
+    await db.execute({ sql: "INSERT INTO banners (title, image, link) VALUES (?,?,?)", args: [title, image, link||null] });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: "Gagal tambah banner" }); }
+});
+app.put("/api/banners/:id", adminAuth, async (req: any, res: any) => {
+  const { title, image, link } = req.body;
+  try {
+    await db.execute({ sql: "UPDATE banners SET title=?,image=?,link=? WHERE id=?", args: [title, image, link||null, req.params.id] });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: "Gagal update banner" }); }
+});
+app.delete("/api/banners/:id", adminAuth, async (req: any, res: any) => {
+  try { await db.execute({ sql: "DELETE FROM banners WHERE id=?", args: [req.params.id] }); res.json({ success: true }); }
+  catch { res.status(500).json({ error: "Gagal hapus banner" }); }
+});
+
+// ANNOUNCEMENTS
+app.get("/api/announcements", async (req, res) => {
+  try { res.json((await db.execute("SELECT * FROM announcements ORDER BY createdAt DESC")).rows); } catch { res.json([]); }
+});
+app.post("/api/announcements", auth, async (req: any, res: any) => {
+  const { project, roleNeeded, initiator, deadline, wa } = req.body;
+  try {
+    await db.execute({ sql: "INSERT INTO announcements (project, roleNeeded, initiator, deadline, wa, createdAt) VALUES (?,?,?,?,?,?)", args: [project, roleNeeded, initiator, deadline||null, wa||null, Date.now()] });
+    res.json({ success: true });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+app.put("/api/announcements/:id", adminAuth, async (req: any, res: any) => {
+  const { project, roleNeeded, initiator, deadline, wa } = req.body;
+  try {
+    await db.execute({ sql: "UPDATE announcements SET project=?,roleNeeded=?,initiator=?,deadline=?,wa=? WHERE id=?", args: [project, roleNeeded, initiator, deadline||null, wa||null, req.params.id] });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: "Gagal update pengumuman" }); }
+});
+app.delete("/api/announcements/:id", adminAuth, async (req: any, res: any) => {
+  try { await db.execute({ sql: "DELETE FROM announcements WHERE id=?", args: [req.params.id] }); res.json({ success: true }); }
+  catch { res.status(500).json({ error: "Gagal hapus pengumuman" }); }
+});
+
+// RESEARCH
+app.get("/api/research", async (req, res) => {
+  try { res.json((await db.execute("SELECT * FROM research ORDER BY year DESC")).rows); } catch { res.json([]); }
+});
+app.post("/api/research", auth, async (req: any, res: any) => {
+  const { title, category, author, year } = req.body;
+  try {
+    await db.execute({ sql: "INSERT INTO research (title, category, author, year) VALUES (?,?,?,?)", args: [title, category, author, year] });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: "Gagal tambah riset" }); }
+});
+app.put("/api/research/:id", adminAuth, async (req: any, res: any) => {
+  const { title, category, author, year } = req.body;
+  try {
+    await db.execute({ sql: "UPDATE research SET title=?,category=?,author=?,year=? WHERE id=?", args: [title, category, author, year, req.params.id] });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: "Gagal update riset" }); }
+});
+app.delete("/api/research/:id", adminAuth, async (req: any, res: any) => {
+  try { await db.execute({ sql: "DELETE FROM research WHERE id=?", args: [req.params.id] }); res.json({ success: true }); }
+  catch { res.status(500).json({ error: "Gagal hapus riset" }); }
+});
+
+// MENTORS
+app.get("/api/mentors", async (req, res) => {
+  try { res.json((await db.execute("SELECT * FROM mentors ORDER BY rating DESC")).rows); } catch { res.json([]); }
+});
+app.post("/api/mentors", adminAuth, async (req: any, res: any) => {
   const { name, expertise, rating, available, experience, education, achievements, photo } = req.body;
   try {
-    await db.execute({
-      sql: `INSERT INTO mentors (name, expertise, rating, available, experience, education, achievements, photo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [name, expertise, rating ?? 5, available ?? 1, experience, education, achievements, photo],
-    });
+    await db.execute({ sql: "INSERT INTO mentors (name, expertise, rating, available, experience, education, achievements, photo) VALUES (?,?,?,?,?,?,?,?)", args: [name, expertise, rating??5, available??1, experience, education, achievements, photo] });
     res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal tambah mentor" });
-  }
+  } catch { res.status(500).json({ error: "Gagal tambah mentor" }); }
 });
-
-// --- NOTIFICATIONS ---
-app.get("/api/notifications", isLoggedInMiddleware, async (req: any, res: any) => {
+app.put("/api/mentors/:id", adminAuth, async (req: any, res: any) => {
+  const { name, expertise, rating, available, experience, education, achievements, photo } = req.body;
   try {
-    const result = await db.execute({
-      sql: "SELECT * FROM notifications WHERE userId = ? ORDER BY createdAt DESC",
-      args: [req.user.id],
-    });
-    res.json(result.rows);
-  } catch (e) {
-    res.json([]);
-  }
-});
-
-app.put("/api/notifications/read", isLoggedInMiddleware, async (req: any, res: any) => {
-  try {
-    await db.execute({
-      sql: "UPDATE notifications SET isRead = 1 WHERE userId = ?",
-      args: [req.user.id],
-    });
+    await db.execute({ sql: "UPDATE mentors SET name=?,expertise=?,rating=?,available=?,experience=?,education=?,achievements=?,photo=? WHERE id=?", args: [name, expertise, rating??5, available??1, experience, education, achievements, photo, req.params.id] });
     res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal update notifikasi" });
-  }
+  } catch { res.status(500).json({ error: "Gagal update mentor" }); }
+});
+app.delete("/api/mentors/:id", adminAuth, async (req: any, res: any) => {
+  try { await db.execute({ sql: "DELETE FROM mentors WHERE id=?", args: [req.params.id] }); res.json({ success: true }); }
+  catch { res.status(500).json({ error: "Gagal hapus mentor" }); }
 });
 
-// --- STATS ---
-app.get("/api/stats", async (req, res) => {
+// MEMBERS
+app.get("/api/members", auth, async (req: any, res: any) => {
+  try { res.json((await db.execute("SELECT id,name,username,major,program,entryYear,gradYear,role,wa,nim,photo,email,bio FROM members ORDER BY name ASC")).rows); }
+  catch { res.json([]); }
+});
+app.put("/api/members/:id", adminAuth, async (req: any, res: any) => {
+  const { name, username, nim, role, major, program, entryYear, gradYear, wa, photo, password } = req.body;
   try {
-    const result = await db.execute("SELECT * FROM stats ORDER BY sort_order ASC");
-    res.json(result.rows);
-  } catch (e) {
-    res.json([]);
-  }
+    if (password) {
+      const hashed = await bcrypt.hash(password, 10);
+      await db.execute({ sql: "UPDATE members SET name=?,username=?,nim=?,role=?,major=?,program=?,entryYear=?,gradYear=?,wa=?,photo=?,password=? WHERE id=?", args: [name,username,nim,role,major,program,entryYear,gradYear||null,wa,photo,hashed,req.params.id] });
+    } else {
+      await db.execute({ sql: "UPDATE members SET name=?,username=?,nim=?,role=?,major=?,program=?,entryYear=?,gradYear=?,wa=?,photo=? WHERE id=?", args: [name,username,nim,role,major,program,entryYear,gradYear||null,wa,photo,req.params.id] });
+    }
+    res.json({ success: true });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+app.delete("/api/members/:id", adminAuth, async (req: any, res: any) => {
+  try { await db.execute({ sql: "DELETE FROM members WHERE id=?", args: [req.params.id] }); res.json({ success: true }); }
+  catch { res.status(500).json({ error: "Gagal hapus member" }); }
 });
 
-// --- BANNERS ---
-app.get("/api/banners", async (req, res) => {
-  try {
-    const result = await db.execute("SELECT * FROM banners");
-    res.json(result.rows);
-  } catch (e) {
-    res.json([]);
-  }
+// NOTIFICATIONS
+app.get("/api/notifications", auth, async (req: any, res: any) => {
+  try { res.json((await db.execute({ sql: "SELECT * FROM notifications WHERE userId=? ORDER BY createdAt DESC", args: [req.user.id] })).rows); }
+  catch { res.json([]); }
+});
+app.put("/api/notifications/read", auth, async (req: any, res: any) => {
+  try { await db.execute({ sql: "UPDATE notifications SET isRead=1 WHERE userId=?", args: [req.user.id] }); res.json({ success: true }); }
+  catch { res.status(500).json({ error: "Gagal update notifikasi" }); }
 });
 
-// --- ANNOUNCEMENTS ---
-app.get("/api/announcements", async (req, res) => {
-  try {
-    const result = await db.execute("SELECT * FROM announcements ORDER BY createdAt DESC");
-    res.json(result.rows);
-  } catch (e) {
-    res.json([]);
-  }
+// BRAINSTORM
+app.get("/api/brainstorm/history", auth, async (req: any, res: any) => {
+  try { res.json((await db.execute({ sql: "SELECT * FROM brainstorm_chats WHERE userId=? ORDER BY createdAt ASC", args: [req.user.id] })).rows); }
+  catch { res.json([]); }
 });
-
-// --- BRAINSTORM CHAT ---
-app.get("/api/brainstorm", isLoggedInMiddleware, async (req: any, res: any) => {
-  try {
-    const result = await db.execute(`
-      SELECT brainstorm_chats.*, members.username, members.photo as userPhoto
-      FROM brainstorm_chats
-      JOIN members ON brainstorm_chats.userId = members.id
-      ORDER BY createdAt ASC
-    `);
-    res.json(result.rows);
-  } catch (e) {
-    res.json([]);
-  }
-});
-
-app.post("/api/brainstorm", isLoggedInMiddleware, async (req: any, res: any) => {
+app.post("/api/brainstorm/save", auth, async (req: any, res: any) => {
   const { role, content } = req.body;
   try {
-    await db.execute({
-      sql: "INSERT INTO brainstorm_chats (userId, role, content, createdAt) VALUES (?, ?, ?, ?)",
-      args: [req.user.id, role || "user", content || "", Date.now()],
-    });
+    await db.execute({ sql: "INSERT INTO brainstorm_chats (userId, role, content, createdAt) VALUES (?,?,?,?)", args: [req.user.id, role||"user", content||"", Date.now()] });
     res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Gagal simpan chat" });
-  }
-});
-
-// --- MEMBERS ---
-app.get("/api/members", isLoggedInMiddleware, async (req: any, res: any) => {
-  try {
-    const result = await db.execute(
-      "SELECT id, name, username, major, program, entryYear, gradYear, role, wa, nim, photo, email, bio FROM members ORDER BY name ASC"
-    );
-    res.json(result.rows);
-  } catch (e) {
-    res.json([]);
-  }
+  } catch { res.status(500).json({ error: "Gagal simpan chat" }); }
 });
 
 export default app;
-
