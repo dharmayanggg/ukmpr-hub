@@ -60,7 +60,8 @@ app.post("/api/auth/public-register", async (req, res) => {
       args: [name||"", username||"", hashed, major||"", program||"", entryYear||0, role||"Anggota", wa||null, nim||null, photo||null],
     });
     res.status(201).json({ success: true });
-  } catch (err: any) { 
+    } catch (err: any) { 
+    if (err.message?.includes("UNIQUE")) return res.status(400).json({ error: "Username sudah terdaftar, gunakan yang lain" });
     res.status(500).json({ error: err.message || "Gagal register" }); 
   }
 });
