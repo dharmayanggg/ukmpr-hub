@@ -438,8 +438,11 @@ export default function App() {
           </div>
           
           {/* Header Running Text */}
-          <div className="mt-3 overflow-hidden py-1.5 -mx-5 flex justify-center items-center">
-            <div className="text-[10px] sm:text-xs font-normal text-slate-600 dark:text-slate-400 px-4 text-center h-4 flex items-center">
+          <div className="mt-4 overflow-hidden bg-slate-50 dark:bg-slate-900/50 py-2.5 px-3 sm:px-4 rounded-lg border border-slate-200 dark:border-slate-800 flex justify-start items-center shadow-sm">
+            <div className="text-[10px] sm:text-xs font-medium text-slate-700 dark:text-slate-300 text-left h-4 flex items-center w-full">
+              {/* Indikator titik biru berkedip */}
+              <span className="mr-2.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              
               <TypewriterText 
                 texts={[
                   "Gde Pudja Creativity Fair 16-17 Mei 2026",
