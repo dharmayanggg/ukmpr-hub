@@ -51,7 +51,7 @@ const adminAuth = async (req: any, res: any, next: any) => {
 app.get("/api/health", (req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 // AUTH
-app.post("/api/auth/register", async (req, res) => {
+app.post("/api/auth/public-register", async (req, res) => {
   const { name, username, password, major, program, entryYear, wa, nim, photo, role } = req.body;
   try {
     const hashed = await bcrypt.hash(password, 10);
@@ -60,7 +60,9 @@ app.post("/api/auth/register", async (req, res) => {
       args: [name||"", username||"", hashed, major||"", program||"", entryYear||0, role||"Anggota", wa||null, nim||null, photo||null],
     });
     res.status(201).json({ success: true });
-  } catch (err: any) { res.status(500).json({ error: err.message || "Gagal register" }); }
+  } catch (err: any) { 
+    res.status(500).json({ error: err.message || "Gagal register" }); 
+  }
 });
 
 app.post("/api/auth/login", async (req, res) => {
