@@ -101,10 +101,20 @@ app.post("/api/auth/logout", async (req, res) => {
 app.put("/api/profile/me", auth, async (req: any, res: any) => {
   const { name, username, bio, photo } = req.body;
   try {
-    await db.execute({ sql: "UPDATE members SET name=?, username=?, bio=?, photo=? WHERE id=?", args: [name, username, bio||null, photo||null, req.user.id] });
+    await db.execute({ 
+      sql: "UPDATE members SET name=?, username=?, bio=?, photo=? WHERE id=?", 
+      // Tambahkan default fallback agar Turso tidak menerima nilai undefined
+      args: [name || "", username || "", bio || null, photo || null, req.user.id] 
+    });
     const u = await db.execute({ sql: "SELECT * FROM members WHERE id=?", args: [req.user.id] });
     res.json({ success: true, user: u.rows[0] });
-  } catch (err: any) { res.status(500).json({ error: err.message }); }
+  } catch (err: any) { 
+    // Penjaga jika user berebut username
+    if (err.message?.includes("UNIQUE")) {
+      return res.status(400).json({ error: "Username sudah digunakan, silakan pilih yang lain" });
+    }
+    res.status(500).json({ error: err.message }); 
+  }
 });
 
 // POSTS
