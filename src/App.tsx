@@ -392,8 +392,8 @@ export default function App() {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'} flex justify-center font-sans selection:bg-blue-500 selection:bg-opacity-20 selection:text-blue-500 transition-colors duration-300`}>
-      <div className={`w-full max-w-md ${isDarkMode ? 'bg-slate-800' : 'bg-white'} h-screen h-[100dvh] shadow-2xl relative flex flex-col overflow-hidden transition-colors duration-300`}>
-        
+      <div className={`w-full max-w-md ${isDarkMode ? 'bg-slate-800' : 'bg-white'} min-h-screen shadow-2xl relative flex flex-col transition-colors duration-300`}>
+
         {/* TOP HEADER */}
                 {/* TOP HEADER - STICKY & PRO LOOK */}
         <header className={`${isDarkMode ? 'bg-slate-800/95 border-slate-700' : 'bg-white/95 border-slate-100'} backdrop-blur-md border-b flex flex-col px-5 shrink-0 sticky top-0 z-50 pt-4 pb-3 transition-all duration-300`}>
