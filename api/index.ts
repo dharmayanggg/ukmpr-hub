@@ -228,9 +228,12 @@ app.get("/api/announcements", async (req, res) => {
   try { res.json((await db.execute("SELECT * FROM announcements ORDER BY createdAt DESC")).rows); } catch { res.json([]); }
 });
 app.post("/api/announcements", auth, async (req: any, res: any) => {
-  const { project, roleNeeded, initiator, deadline, wa } = req.body;
+  const { project, roleNeeded, initiator, status, deadline, wa } = req.body;
   try {
-    await db.execute({ sql: "INSERT INTO announcements (project, roleNeeded, initiator, deadline, wa, createdAt) VALUES (?,?,?,?,?,?)", args: [project, roleNeeded, initiator, deadline||null, wa||null, Date.now()] });
+    await db.execute({ 
+      sql: "INSERT INTO announcements (project, roleNeeded, initiator, status, deadline, wa, createdAt) VALUES (?,?,?,?,?,?,?)", 
+      args: [project, roleNeeded, initiator, status || "Open", deadline||null, wa||null, Date.now()] 
+    });
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
