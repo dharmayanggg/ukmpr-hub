@@ -15,6 +15,44 @@ import html2canvas from 'html2canvas';
 import { legalContent } from './legal';
 import ReactMarkdown from 'react-markdown';
 
+// --- TYPEWRITER COMPONENT ---
+const TypewriterText = ({ texts, typingSpeed = 50, deletingSpeed = 30, pause = 3000 }) => {
+  const [textIndex, setTextIndex] = React.useState(0);
+  const [displayText, setDisplayText] = React.useState('');
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  React.useEffect(() => {
+    let timer;
+    const currentText = texts[textIndex];
+
+    if (isDeleting) {
+      timer = setTimeout(() => {
+        setDisplayText(currentText.substring(0, displayText.length - 1));
+      }, deletingSpeed);
+    } else {
+      timer = setTimeout(() => {
+        setDisplayText(currentText.substring(0, displayText.length + 1));
+      }, typingSpeed);
+    }
+
+    if (!isDeleting && displayText === currentText) {
+      timer = setTimeout(() => setIsDeleting(true), pause);
+    } else if (isDeleting && displayText === '') {
+      setIsDeleting(false);
+      setTextIndex((prevIndex) => (prevIndex + 1) % texts.length);
+    }
+
+    return () => clearTimeout(timer);
+  }, [displayText, isDeleting, texts, typingSpeed, deletingSpeed, pause, textIndex]);
+
+  return (
+    <span className="inline-flex items-center">
+      {displayText}
+      <span className="ml-0.5 inline-block w-[2px] h-3 bg-slate-500 dark:bg-slate-400 animate-pulse"></span>
+    </span>
+  );
+};
+
 // --- TYPES ---
 interface Member {
   id: number;
@@ -400,14 +438,18 @@ export default function App() {
           </div>
           
           {/* Header Running Text */}
-          <div className="mt-3 overflow-hidden bg-slate-50/50 dark:bg-slate-900/30 py-0.5 border-y border-slate-100 dark:border-slate-700 -mx-5 shadow-inner">
-            <div className="flex w-max animate-marquee whitespace-nowrap">
-              <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
-                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas 
-              </span>
-              <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
-                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas
-              </span>
+          <div className="mt-3 overflow-hidden py-1.5 -mx-5 flex justify-center items-center">
+            <div className="text-[10px] sm:text-xs font-normal text-slate-600 dark:text-slate-400 px-4 text-center h-4 flex items-center">
+              <TypewriterText 
+                texts={[
+                  "Gde Pudja Creativity Fair 16-17 Mei 2026",
+                  "Lomba KTI Nasional, Esai dan Video Pendek",
+                  "UKMPR IAHN Gde Pudja Mataram #BernalarCerdas"
+                ]} 
+                typingSpeed={50} 
+                deletingSpeed={25} 
+                pause={3000} 
+              />
             </div>
           </div>
         </header>
