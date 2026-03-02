@@ -237,7 +237,7 @@ app.delete("/api/banners/:id", adminAuth, async (req: any, res: any) => {
 app.get("/api/announcements", async (req, res) => {
   try { res.json((await db.execute("SELECT * FROM announcements ORDER BY createdAt DESC")).rows); } catch { res.json([]); }
 });
-app.post("/api/announcements", auth, async (req: any, res: any) => {
+app.post("/api/announcements", async (req, res) => {
   const { project, roleNeeded, initiator, status, deadline, wa } = req.body;
   try {
     await db.execute({ 
