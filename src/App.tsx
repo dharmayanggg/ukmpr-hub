@@ -399,56 +399,18 @@ export default function App() {
             </div>
           </div>
           
-          {/* Header Typewriter - Multi Sentence Pro */}
-<div className="mt-2 py-1 flex justify-center w-full">
-  <p className="text-[10px] text-slate-500 dark:text-slate-400 px-5 min-h-[1rem] tracking-normal text-center">
-    {(() => {
-      const [text, setText] = useState("");
-      const [isDeleting, setIsDeleting] = useState(false);
-      const [loop, setLoop] = useState(0);
-      const [typingSpeed, setTypingSpeed] = useState(100);
-
-      const phrases = [
-        "Gde Pudja Creativity Fair 13-15 Mei 2026",
-        "Selamat Menunaikan Ibadah Puasa",
-        "Nyepi 2026: Menyucikan diri dalam keheningan",
-        "UKMPR selalu berinovasi",
-        "Gabung UKMPR, biar jago penelitian"
-      ];
-
-      useEffect(() => {
-        const handleTyping = () => {
-          const currentPhrase = phrases[loop % phrases.length];
-          const fullText = currentPhrase;
-
-          setText(isDeleting 
-            ? fullText.substring(0, text.length - 1) 
-            : fullText.substring(0, text.length + 1)
-          );
-
-          setTypingSpeed(isDeleting ? 50 : 100);
-
-          if (!isDeleting && text === fullText) {
-            setTimeout(() => setIsDeleting(true), 2000);
-          } else if (isDeleting && text === "") {
-            setIsDeleting(false);
-            setLoop(loop + 1);
-          }
-        };
-
-        const timer = setTimeout(handleTyping, typingSpeed);
-        return () => clearTimeout(timer);
-      }, [text, isDeleting, loop]);
-
-      return (
-        <span className="inline-flex items-center">
-          {text}
-          <span className="w-[1.5px] h-3 bg-blue-500 ml-1 animate-pulse"></span>
-        </span>
-      );
-    })()}
-  </p>
-</div>
+          {/* Header Running Text */}
+          <div className="mt-3 overflow-hidden bg-slate-50/50 dark:bg-slate-900/30 py-0.5 border-y border-slate-100 dark:border-slate-700 -mx-5 shadow-inner">
+            <div className="flex w-max animate-marquee whitespace-nowrap">
+              <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
+                Gde Pudja Creativity Fair 16-17 Mei 2026 • Lomba KTI Nasional, Esai dan Video Pendek • UKMPR IAHN Gde Pudja Mataram #BernalarCerdas 
+              </span>
+              <span className="text-[10px] font-normal text-slate-600 dark:text-slate-400 px-4">
+                Selamat menunaikan ibadah puasa • Nyepi 2026 sebentar lagi, mari sucikan hati dalam keheningan • UKMPR terus berinovasi •
+              </span>
+            </div>
+          </div>
+        </header>
 
         {/* NOTIFICATION MODAL */}
         {isNotificationOpen && (
@@ -996,6 +958,8 @@ export default function App() {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
 
               {memberView === 'adminLogin' && (
                 <div className="flex flex-col items-center justify-center space-y-6 py-10">
@@ -1052,40 +1016,42 @@ export default function App() {
                       </button>
                     </div>
 
-                                <button
-              type="submit"
-              className="w-full py-3 px-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all mb-3"
-            >
-              Masuk Dashboard
-            </button>
-            <button
-              type="button"
-              onClick={() => { setIsMoreMenuOpen(false); setMemberView('settings'); }}
-              className="w-full py-3 px-4 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
-            >
-              Kembali ke Pengaturan
-            </button>
-          </form>
-          </div>
-      )}
+                    <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500">
+                      Masuk Dashboard
+                    </button>
+                    <button type="button" onClick={() => setMemberView('settings')} className="w-full text-slate-400 text-xs font-bold py-2">
+                      Kembali ke Pengaturan
+                    </button>
+                  </form>
+                </div>
+              )}
 
-      {memberView === 'list' && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 px-4">
-          <div className="space-y-3">
-            {members.filter(m => m.role !== 'admin').map((m) => (
-              <div key={m.id} className="flex items-center space-x-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-bold shrink-0">
-                  {m.name.charAt(0)}
+              {/* The card view has been integrated into the main member menu */}
+
+              {memberView === 'list' && (
+                <div>
+                  <div className="space-y-3">
+                    {members.filter(m => m.role === listFilter).map(m => (
+                      <div key={m.id} className="p-3 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center space-x-3 bg-white dark:bg-slate-800">
+                        <div className="w-10 h-10 bg-blue-600 bg-opacity-10 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center font-bold">
+                          {m.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-slate-800 dark:text-white">{m.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{m.program} {m.major} ({m.entryYear})</p>
+                        </div>
+                      </div>
+                    ))}
+                    {members.filter(m => m.role === listFilter).length === 0 && (
+                      <p className="text-center text-slate-500 dark:text-slate-400 text-sm py-4">Belum ada data.</p>
+                    )}
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-slate-800 dark:text-white truncate">{m.name}</p>
-                  <p className="text-xs text-slate-500 truncate capitalize">{m.role}</p>
-                </div>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
