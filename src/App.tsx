@@ -508,7 +508,7 @@ export default function App() {
         )}
 
         {/* MAIN SCROLLABLE CONTENT */}
-        <main className={`flex-1 overflow-y-auto pb-48 pt-4 px-4 ${isDarkMode ? 'bg-slate-900 bg-opacity-50' : 'bg-slate-50 bg-opacity-50'} transition-colors duration-300`}>
+        <main className={`flex-1 pb-48 pt-4 px-4 ${isDarkMode ? 'bg-slate-900 bg-opacity-50' : 'bg-slate-50 bg-opacity-50'} transition-colors duration-300`}>
           {renderContent()}
         </main>
 
