@@ -5,7 +5,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config(); 
 
 const db = createClient({
   url: process.env.TURSO_DATABASE_URL as string,
