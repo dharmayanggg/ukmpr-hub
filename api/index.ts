@@ -297,6 +297,22 @@ app.get("/api/members", auth, async (req: any, res: any) => {
   try { res.json((await db.execute("SELECT id,name,username,major,program,entryYear,gradYear,role,wa,nim,photo,email,bio FROM members ORDER BY name ASC")).rows); }
   catch { res.json([]); }
 });
+
+app.get("/api/members/username/:username", async (req: any, res: any) => {
+  try {
+    const u = await db.execute({
+      sql: "SELECT id, name, username, major, program, entryYear, gradYear, role, wa, nim, photo, email, bio FROM members WHERE username = ?",
+      args: [req.params.username]
+    });
+    if (!u.rows[0]) {
+      return res.status(404).json({ error: "Member tidak ditemukan" });
+    }
+    res.json(u.rows[0]);
+  } catch (err: any) { 
+    res.status(500).json({ error: err.message }); 
+  }
+});
+
 app.put("/api/members/:id", adminAuth, async (req: any, res: any) => {
   const { name, username, nim, role, major, program, entryYear, gradYear, wa, photo, password } = req.body;
   try {
