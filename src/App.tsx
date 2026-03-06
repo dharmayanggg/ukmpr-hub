@@ -14,6 +14,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import html2canvas from 'html2canvas';
 import { legalContent } from './legal';
 import ReactMarkdown from 'react-markdown';
+import { Analytics } from '@vercel/analytics/react';
 
 // --- TYPEWRITER COMPONENT ---
 const TypewriterText = ({ texts, typingSpeed = 50, deletingSpeed = 30, pause = 3000 }) => {
@@ -1557,6 +1558,7 @@ function DashboardView({ banners, stats, announcements, aiTips, news, onNavigate
           </div>
         </div>
       )}
+        <Analytics />
     </div>
   );
 }
