@@ -13,6 +13,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import html2canvas from 'html2canvas';
 import { legalContent } from './legal';
+import { Analytics } from '@vercel/analytics/react';
 import ReactMarkdown from 'react-markdown';
 
 // --- TYPEWRITER COMPONENT ---
@@ -1099,6 +1100,7 @@ export default function App() {
           </div>
         )}
       </div>
+        <Analytics />
     </div>
   );
 }

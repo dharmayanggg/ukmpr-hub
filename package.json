@@ -19,6 +19,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/html2canvas": "^0.5.35",
+    "@vercel/analytics": "^1.6.1",
     "@vitejs/plugin-react": "^5.0.4",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.4.1",
